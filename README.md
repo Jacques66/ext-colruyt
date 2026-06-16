@@ -139,6 +139,9 @@ qu'un seul objectif : améliorer le confort de l'utilisateur de son chariot.
 - **Fidèle au design** — nous avons veillé à **ne pas trahir le _look & feel_**
   de la page Collect&Go (couleurs, typographie, composants natifs), par respect
   pour le travail de leurs équipes ; nos ajouts s'y intègrent discrètement.
+- **Léger** — nous avons veillé à **ne pas ralentir la page** : calculs
+  regroupés (debounce), observation ciblée du seul panier, et reconstruction
+  du DOM uniquement lorsque les données changent réellement.
 - **Auditable** — code source ouvert, facile à relire pour une équipe sécurité.
 
 > Ce respect de l'utilisateur et des sites tiers — confidentialité absolue,
