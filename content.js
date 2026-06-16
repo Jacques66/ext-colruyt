@@ -18,7 +18,10 @@
   var TOTAL_CLASS = 'cg-category-total';
   var RECAP_CLASS = 'cg-category-recap';
   var STYLE_ID = 'cg-category-total-styles';
-  var DEBOUNCE_MS = 300;
+  var DEBOUNCE_MS = 250;
+  // Délai maximal : garantit un recalcul même si la page mute en continu
+  // (chat, Tealium, timers…) et repousserait sinon indéfiniment le debounce.
+  var MAX_WAIT_MS = 800;
 
   var SORT_KEY = 'cgSortMode';
 
@@ -361,23 +364,47 @@
     renderRecap(rows);
   }
 
+  // Debounce avec délai maximal : on regroupe les mutations rapprochées, mais
+  // on garantit une exécution au plus tard toutes les MAX_WAIT_MS.
   var debounceTimer = null;
+  var maxWaitTimer = null;
+
+  function runUpdate() {
+    if (debounceTimer) { clearTimeout(debounceTimer); debounceTimer = null; }
+    if (maxWaitTimer) { clearTimeout(maxWaitTimer); maxWaitTimer = null; }
+    updateTotals();
+  }
+
   function scheduleUpdate() {
     if (debounceTimer) clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(updateTotals, DEBOUNCE_MS);
+    debounceTimer = setTimeout(runUpdate, DEBOUNCE_MS);
+    if (!maxWaitTimer) {
+      maxWaitTimer = setTimeout(runUpdate, MAX_WAIT_MS);
+    }
   }
 
   /**
-   * Observe le DOM du panier et relance le calcul à chaque mutation.
+   * Choisit le conteneur à observer : le wrapper Vue (`page-content`) si
+   * présent — il englobe la liste et la sidebar tout en excluant les widgets
+   * tiers (chat, etc.) — sinon `.basket`, sinon le `body` en dernier recours.
+   */
+  function getObserveTarget() {
+    return (
+      document.querySelector('page-content') ||
+      document.querySelector('.basket') ||
+      document.body
+    );
+  }
+
+  /**
+   * Observe le DOM du panier et relance le calcul à chaque mutation
+   * (changement de quantité, suppression de produit, promo appliquée…).
    */
   function init() {
     injectStyles();
 
-    var observer = new MutationObserver(function () {
-      scheduleUpdate();
-    });
-
-    observer.observe(document.body, {
+    var observer = new MutationObserver(scheduleUpdate);
+    observer.observe(getObserveTarget(), {
       childList: true,
       subtree: true,
       characterData: true
