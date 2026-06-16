@@ -86,11 +86,21 @@
       '.' + RECAP_CLASS + '__title{font-weight:700;color:#1C3661;' +
         'margin-bottom:6px;}',
       '.' + RECAP_CLASS + '__row{display:flex;justify-content:space-between;' +
-        'align-items:baseline;gap:12px;color:#1C3661;padding:3px 0;' +
-        'font-size:0.95em;}',
+        'align-items:baseline;gap:12px;color:#1C3661;padding:3px 4px;' +
+        'font-size:0.95em;cursor:pointer;border-radius:4px;' +
+        'transition:background-color .12s ease;}',
+      '.' + RECAP_CLASS + '__row:hover{background-color:#eef3fb;}',
+      '.' + RECAP_CLASS + '__row:hover .' + RECAP_CLASS + '__name{' +
+        'text-decoration:underline;}',
       '.' + RECAP_CLASS + '__name{overflow:hidden;text-overflow:ellipsis;' +
         'white-space:nowrap;}',
-      '.' + RECAP_CLASS + '__value{font-weight:600;white-space:nowrap;}'
+      '.' + RECAP_CLASS + '__value{font-weight:600;white-space:nowrap;}',
+      /* Décalage pour ne pas masquer le rayon sous l'en-tête au scroll. */
+      '.category{scroll-margin-top:100px;}',
+      /* Flash visuel sur le rayon ciblé. */
+      '@keyframes cg-flash{0%{background-color:rgba(5,135,199,.25);}' +
+        '100%{background-color:transparent;}}',
+      '.cg-flash{animation:cg-flash 1.2s ease-out;}'
     ].join('');
     (document.head || document.documentElement).appendChild(style);
   }
@@ -172,6 +182,18 @@
       orderTotals.appendChild(recap);
     }
 
+    // Clic sur une ligne => scroll vers le rayon (listener délégué, posé 1 fois).
+    if (!recap.__cgClickBound) {
+      recap.__cgClickBound = true;
+      recap.addEventListener('click', function (e) {
+        var rowEl = e.target.closest
+          ? e.target.closest('.' + RECAP_CLASS + '__row')
+          : null;
+        if (!rowEl || !rowEl.__cgCategory) return;
+        scrollToCategory(rowEl.__cgCategory);
+      });
+    }
+
     var parts = ['<div class="' + RECAP_CLASS + '__title"></div>'];
     rows.forEach(function (row) {
       parts.push(
@@ -200,12 +222,29 @@
     rows.forEach(function (row, i) {
       var rowEl = rowEls[i];
       if (!rowEl) return;
+      // Référence vers le rayon correspondant (l'ordre change selon le tri).
+      rowEl.__cgCategory = row.category;
       var nameEl = rowEl.querySelector('.' + RECAP_CLASS + '__name');
       var valueEl = rowEl.querySelector('.' + RECAP_CLASS + '__value');
       if (nameEl && nameEl.textContent !== row.title) nameEl.textContent = row.title;
       var valueText = formatPrice(row.total);
       if (valueEl && valueEl.textContent !== valueText) valueEl.textContent = valueText;
     });
+  }
+
+  /**
+   * Fait défiler la page jusqu'au rayon ciblé et le met brièvement en évidence.
+   */
+  function scrollToCategory(category) {
+    if (!category) return;
+    category.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    category.classList.remove('cg-flash');
+    // Force un reflow pour pouvoir relancer l'animation si on reclique.
+    void category.offsetWidth;
+    category.classList.add('cg-flash');
+    setTimeout(function () {
+      category.classList.remove('cg-flash');
+    }, 1300);
   }
 
   /**
@@ -220,7 +259,11 @@
       if (total === null) return;
       var totalText = formatPrice(total);
       updateCountLabel(category, totalText);
-      rows.push({ title: getCategoryTitle(category), total: total });
+      rows.push({
+        title: getCategoryTitle(category),
+        total: total,
+        category: category
+      });
     });
 
     // Récap trié par montant décroissant (les libellés des compteurs dans la
