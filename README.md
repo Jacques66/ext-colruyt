@@ -1,53 +1,89 @@
-# Collect&Go — Totaux par catégorie
+<div align="center">
 
-Extension Chrome qui enrichit la page panier de
-[Collect&Go](https://www.collectandgo.be/fr/chariot) (et son équivalent
-néerlandais `/nl/winkelwagen`).
+# 🛒 Collect&Go — Totaux par rayon
 
-## Fonctionnalité
+**Extension Chrome qui enrichit la page panier de [Collect&Go](https://www.collectandgo.be/fr/chariot)
+avec les totaux par catégorie — pour savoir, d'un coup d'œil, combien coûte chaque rayon.**
 
-Le panier est organisé en sections par catégorie. Pour chaque section,
-l'extension additionne le prix total de tous les produits qu'elle contient et
-affiche ce total **en gras** à côté du compteur existant :
+[![Manifest](https://img.shields.io/badge/Manifest-V3-blue)](manifest.json)
+[![Langues](https://img.shields.io/badge/langues-FR%20%2F%20NL-success)](#-bilingue-fr--nl)
+[![Licence](https://img.shields.io/badge/licence-MIT-lightgrey)](#-licence)
 
-> 7 produits **— 12,34 €**
+</div>
 
-Les totaux sont recalculés automatiquement à chaque modification du panier
-(les quantités étant mises à jour dynamiquement par la réactivité Vue.js).
+---
 
-## Détails techniques
+## ✨ Fonctionnalités
 
-- **URLs ciblées** : `*://www.collectandgo.be/*/chariot` et
+| | |
+|---|---|
+| 🧮 **Total par rayon (dans la liste)** | Pour chaque section, la somme des prix s'affiche **en gras** à côté du compteur — sur une seule ligne. |
+| 📋 **Récapitulatif (sidebar)** | Un bloc **« Total par rayon »** apparaît sous le **Total estimé**, avec le détail de chaque rayon. |
+| ↕️ **Tri au choix** | Un menu déroulant trie le récap : montant décroissant, croissant, ou ordre de la liste. Le choix est mémorisé. |
+| 🔗 **Navigation en un clic** | Cliquer sur un rayon du récap fait défiler la page jusqu'à lui, qui clignote brièvement. |
+| 📌 **Colonne de droite figée** | La sidebar reste visible pendant le défilement (sticky, avec défilement interne si besoin). |
+| 🔄 **Toujours à jour** | Les totaux se recalculent automatiquement à chaque changement de quantité (réactivité Vue.js). |
+
+> Exemple, dans l'en-tête d'un rayon :
+>
+> > **Boîtes, conserves et bocaux** — 7 produits **— 16,13 €**
+
+---
+
+## 🌍 Bilingue (FR / NL)
+
+Le site existe en français et en néerlandais ; l'extension s'adapte
+automatiquement, d'après l'URL (`/fr/chariot` vs `/nl/winkelwagen`) puis
+l'attribut `<html lang>` :
+
+| | 🇫🇷 Français | 🇳🇱 Nederlands |
+|---|---|---|
+| Titre du récap | Total par rayon | Totaal per afdeling |
+| Tri | Montant décroissant / croissant / Ordre de la liste | Bedrag aflopend / oplopend / Volgorde van de lijst |
+
+---
+
+## 🚀 Installation (mode développeur)
+
+1. Cloner ou télécharger ce dépôt.
+2. Ouvrir `chrome://extensions`.
+3. Activer le **Mode développeur** (en haut à droite).
+4. Cliquer sur **« Charger l'extension non empaquetée »** et sélectionner ce dossier.
+5. Ouvrir le [chariot Collect&Go](https://www.collectandgo.be/fr/chariot) — les totaux apparaissent. ✅
+
+---
+
+## ⚙️ Comment ça marche
+
+- **Pages ciblées** : `*://www.collectandgo.be/*/chariot` et
   `*://www.collectandgo.be/*/winkelwagen`.
 - **Content script** injecté à `document_idle`.
-- Lecture du prix dans `.ds-product-total-price.is-p1__bold` (version desktop
-  uniquement — la version `--mobile` est ignorée), au format européen
-  (`5,98 €`, virgule comme séparateur décimal).
-- Structure des sections : `.category` → en-tête `.header.background-blue`
-  et liste de produits ; chaque produit est un `.ds-product-list-item-container`.
-- Un `MutationObserver` sur le panier relance le calcul à chaque mutation du
-  DOM, avec un **debounce de ~300 ms**.
-- Les compteurs `.count` déjà traités sont marqués via l'attribut
-  `data-cg-total-processed` : la valeur est mise à jour plutôt que de rajouter
-  un nouveau nœud à chaque recalcul.
+- **Lecture des prix** : `.ds-product-total-price.is-p1__bold` — version desktop
+  uniquement (la variante `--mobile` est ignorée), au format européen
+  (`5,98 €`, virgule décimale).
+- **Sections** : `.category` → en-tête `.header.background-blue` + liste de
+  produits ; chaque produit est un `.ds-product-list-item-container`.
+- **Recalcul** : un `MutationObserver` sur le panier relance le calcul à chaque
+  mutation du DOM, avec un **debounce de ~300 ms**.
+- **Idempotence** : les compteurs `.count` traités sont marqués
+  (`data-cg-total-processed`) ; la valeur est mise à jour en place plutôt que de
+  rajouter un nœud. Les libellés sont écrits via `textContent` (pas d'injection HTML).
+- **Non intrusif** : l'extension n'altère aucune fonctionnalité existante de la page.
 
-- **Bilingue** : le site existe en FR et NL ; le libellé du récapitulatif
-  s'adapte automatiquement (« Total par rayon » / « Totaal per afdeling »),
-  d'après l'URL (`/fr/chariot` vs `/nl/winkelwagen`) puis l'attribut
-  `<html lang>`.
+---
 
-- **Récapitulatif sidebar** : bloc « Total par rayon » sous le « Total
-  estimé », avec un **dropdown de tri** (montant décroissant / croissant /
-  ordre de la liste — choix mémorisé via `localStorage`). Chaque ligne est
-  **cliquable** et fait défiler la page jusqu'au rayon correspondant, qui
-  clignote brièvement.
+## 📁 Structure du projet
 
-L'extension n'interfère pas avec les fonctionnalités existantes de la page.
+```
+ext-colruyt/
+├── manifest.json     # Manifest V3 (content script, URLs ciblées)
+├── content.js        # Toute la logique : calculs, récap, tri, scroll, styles
+├── icons/            # Icônes 16 / 48 / 128 px
+└── README.md
+```
 
-## Installation (mode développeur)
+---
 
-1. Ouvrir `chrome://extensions`.
-2. Activer le **Mode développeur** (en haut à droite).
-3. Cliquer sur **Charger l'extension non empaquetée** et sélectionner ce
-   dossier.
-4. Ouvrir le chariot Collect&Go : les totaux par catégorie apparaissent.
+## 📝 Licence
+
+[MIT](LICENSE) — utilisez, modifiez et partagez librement.
