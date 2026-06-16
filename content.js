@@ -20,11 +20,51 @@
   var STYLE_ID = 'cg-category-total-styles';
   var DEBOUNCE_MS = 300;
 
+  var SORT_KEY = 'cgSortMode';
+
   // Libellés traduits (le site existe en FR et NL).
   var LABELS = {
-    fr: { recapTitle: 'Total par rayon' },
-    nl: { recapTitle: 'Totaal per afdeling' }
+    fr: {
+      recapTitle: 'Total par rayon',
+      sortDesc: 'Montant décroissant',
+      sortAsc: 'Montant croissant',
+      sortPage: 'Ordre de la liste'
+    },
+    nl: {
+      recapTitle: 'Totaal per afdeling',
+      sortDesc: 'Bedrag aflopend',
+      sortAsc: 'Bedrag oplopend',
+      sortPage: 'Volgorde van de lijst'
+    }
   };
+
+  // Mode de tri courant du récap (mémorisé entre les recalculs / rechargements).
+  var sortMode = loadSortMode();
+
+  function loadSortMode() {
+    try {
+      var v = window.localStorage.getItem(SORT_KEY);
+      if (v === 'desc' || v === 'asc' || v === 'page') return v;
+    } catch (e) { /* localStorage indisponible */ }
+    return 'desc';
+  }
+
+  function saveSortMode(mode) {
+    try { window.localStorage.setItem(SORT_KEY, mode); } catch (e) { /* noop */ }
+  }
+
+  /**
+   * Trie (en place) les lignes du récap selon le mode courant.
+   * 'page' conserve l'ordre du DOM (ordre de la grande liste).
+   */
+  function applySort(rows) {
+    if (sortMode === 'desc') {
+      rows.sort(function (a, b) { return b.total - a.total; });
+    } else if (sortMode === 'asc') {
+      rows.sort(function (a, b) { return a.total - b.total; });
+    }
+    return rows;
+  }
 
   /**
    * Détecte la langue de la page (fr par défaut).
@@ -83,8 +123,12 @@
       /* Récapitulatif « Total par rayon » dans la sidebar. */
       '.' + RECAP_CLASS + '{margin-top:12px;padding-top:12px;' +
         'border-top:1px solid #d9dde6;}',
-      '.' + RECAP_CLASS + '__title{font-weight:700;color:#1C3661;' +
-        'margin-bottom:6px;}',
+      '.' + RECAP_CLASS + '__header{display:flex;align-items:center;' +
+        'justify-content:space-between;gap:8px;margin-bottom:6px;}',
+      '.' + RECAP_CLASS + '__title{font-weight:700;color:#1C3661;}',
+      '.' + RECAP_CLASS + '__sort{font:inherit;font-size:0.85em;color:#1C3661;' +
+        'background:#fff;border:1px solid #d9dde6;border-radius:4px;' +
+        'padding:2px 4px;cursor:pointer;max-width:55%;}',
       '.' + RECAP_CLASS + '__row{display:flex;justify-content:space-between;' +
         'align-items:baseline;gap:12px;color:#1C3661;padding:3px 4px;' +
         'font-size:0.95em;cursor:pointer;border-radius:4px;' +
@@ -174,55 +218,36 @@
     var orderTotals = document.querySelector('.sidebar .order-totals');
     if (!orderTotals) return;
 
-    var recap = orderTotals.querySelector('.' + RECAP_CLASS);
-    if (!recap) {
-      recap = document.createElement('div');
-      recap.className = RECAP_CLASS;
-      // Ajouté en fin de bloc => juste après la ligne « Total estimé ».
-      orderTotals.appendChild(recap);
-    }
+    var recap = ensureRecap(orderTotals);
 
-    // Clic sur une ligne => scroll vers le rayon (listener délégué, posé 1 fois).
-    if (!recap.__cgClickBound) {
-      recap.__cgClickBound = true;
-      recap.addEventListener('click', function (e) {
-        var rowEl = e.target.closest
-          ? e.target.closest('.' + RECAP_CLASS + '__row')
-          : null;
-        if (!rowEl || !rowEl.__cgCategory) return;
-        scrollToCategory(rowEl.__cgCategory);
-      });
-    }
-
-    var parts = ['<div class="' + RECAP_CLASS + '__title"></div>'];
-    rows.forEach(function (row) {
-      parts.push(
-        '<div class="' + RECAP_CLASS + '__row">' +
-          '<span class="' + RECAP_CLASS + '__name"></span>' +
-          '<span class="' + RECAP_CLASS + '__value"></span>' +
-        '</div>'
-      );
-    });
-
-    var newHtml = parts.join('');
-    if (recap.getAttribute('data-cg-rows') !== String(rows.length)) {
-      recap.innerHTML = newHtml;
-      recap.setAttribute('data-cg-rows', String(rows.length));
-    }
-
-    // Titre (traduit, rempli via textContent).
+    // Titre traduit (au cas où la langue serait détectée après coup).
     var titleEl = recap.querySelector('.' + RECAP_CLASS + '__title');
-    var titleText = t('recapTitle');
-    if (titleEl && titleEl.textContent !== titleText) {
-      titleEl.textContent = titleText;
+    if (titleEl && titleEl.textContent !== t('recapTitle')) {
+      titleEl.textContent = t('recapTitle');
     }
 
-    // Remplir le texte (textContent => pas d'injection HTML).
-    var rowEls = recap.querySelectorAll('.' + RECAP_CLASS + '__row');
+    // Liste des lignes : on ne reconstruit le HTML que si le nombre change.
+    var list = recap.querySelector('.' + RECAP_CLASS + '__list');
+    if (list.getAttribute('data-cg-rows') !== String(rows.length)) {
+      var parts = [];
+      for (var i = 0; i < rows.length; i++) {
+        parts.push(
+          '<div class="' + RECAP_CLASS + '__row">' +
+            '<span class="' + RECAP_CLASS + '__name"></span>' +
+            '<span class="' + RECAP_CLASS + '__value"></span>' +
+          '</div>'
+        );
+      }
+      list.innerHTML = parts.join('');
+      list.setAttribute('data-cg-rows', String(rows.length));
+    }
+
+    // Remplir / réordonner les lignes (textContent => pas d'injection HTML).
+    var rowEls = list.querySelectorAll('.' + RECAP_CLASS + '__row');
     rows.forEach(function (row, i) {
       var rowEl = rowEls[i];
       if (!rowEl) return;
-      // Référence vers le rayon correspondant (l'ordre change selon le tri).
+      // Référence vers le rayon (l'ordre change selon le tri choisi).
       rowEl.__cgCategory = row.category;
       var nameEl = rowEl.querySelector('.' + RECAP_CLASS + '__name');
       var valueEl = rowEl.querySelector('.' + RECAP_CLASS + '__value');
@@ -230,6 +255,65 @@
       var valueText = formatPrice(row.total);
       if (valueEl && valueEl.textContent !== valueText) valueEl.textContent = valueText;
     });
+  }
+
+  /**
+   * Construit (une seule fois) la structure du récap : en-tête (titre +
+   * dropdown de tri) et conteneur de lignes. Pose aussi les listeners.
+   */
+  function ensureRecap(orderTotals) {
+    var recap = orderTotals.querySelector('.' + RECAP_CLASS);
+    if (recap) return recap;
+
+    recap = document.createElement('div');
+    recap.className = RECAP_CLASS;
+
+    var header = document.createElement('div');
+    header.className = RECAP_CLASS + '__header';
+
+    var title = document.createElement('div');
+    title.className = RECAP_CLASS + '__title';
+    title.textContent = t('recapTitle');
+
+    // Dropdown de tri.
+    var select = document.createElement('select');
+    select.className = RECAP_CLASS + '__sort';
+    [['desc', 'sortDesc'], ['asc', 'sortAsc'], ['page', 'sortPage']].forEach(
+      function (opt) {
+        var option = document.createElement('option');
+        option.value = opt[0];
+        option.textContent = t(opt[1]);
+        if (opt[0] === sortMode) option.selected = true;
+        select.appendChild(option);
+      }
+    );
+    select.addEventListener('change', function () {
+      sortMode = select.value;
+      saveSortMode(sortMode);
+      updateTotals();
+    });
+    // Évite que le clic sur le select ne déclenche un scroll.
+    select.addEventListener('click', function (e) { e.stopPropagation(); });
+
+    header.appendChild(title);
+    header.appendChild(select);
+
+    var list = document.createElement('div');
+    list.className = RECAP_CLASS + '__list';
+    // Clic sur une ligne => scroll vers le rayon (listener délégué).
+    list.addEventListener('click', function (e) {
+      var rowEl = e.target.closest
+        ? e.target.closest('.' + RECAP_CLASS + '__row')
+        : null;
+      if (!rowEl || !rowEl.__cgCategory) return;
+      scrollToCategory(rowEl.__cgCategory);
+    });
+
+    recap.appendChild(header);
+    recap.appendChild(list);
+    // Ajouté en fin de bloc => juste après la ligne « Total estimé ».
+    orderTotals.appendChild(recap);
+    return recap;
   }
 
   /**
@@ -266,11 +350,9 @@
       });
     });
 
-    // Récap trié par montant décroissant (les libellés des compteurs dans la
-    // liste, eux, restent dans l'ordre de la page).
-    rows.sort(function (a, b) {
-      return b.total - a.total;
-    });
+    // Récap trié selon le choix de l'utilisateur (les libellés des compteurs
+    // dans la liste, eux, restent toujours dans l'ordre de la page).
+    applySort(rows);
 
     renderRecap(rows);
   }

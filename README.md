@@ -36,6 +36,12 @@ Les totaux sont recalculés automatiquement à chaque modification du panier
   d'après l'URL (`/fr/chariot` vs `/nl/winkelwagen`) puis l'attribut
   `<html lang>`.
 
+- **Récapitulatif sidebar** : bloc « Total par rayon » sous le « Total
+  estimé », avec un **dropdown de tri** (montant décroissant / croissant /
+  ordre de la liste — choix mémorisé via `localStorage`). Chaque ligne est
+  **cliquable** et fait défiler la page jusqu'au rayon correspondant, qui
+  clignote brièvement.
+
 L'extension n'interfère pas avec les fonctionnalités existantes de la page.
 
 ## Installation (mode développeur)
