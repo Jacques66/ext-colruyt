@@ -48,7 +48,9 @@
       ownBrand: 'Marque propre',
       handoverMissing: 'Adresse ou plage horaire manquante',
       disabledMsg: 'Extension « Totaux par rayon » désactivée : la structure de ' +
-        'la page Collect&Go a changé. L\'extension doit être mise à jour.'
+        'la page Collect&Go a changé. L\'extension doit être mise à jour.',
+      article: 'article',
+      articles: 'articles'
     },
     nl: {
       recapTitle: 'Totaal per afdeling',
@@ -60,7 +62,9 @@
       ownBrand: 'Eigen merk',
       handoverMissing: 'Adres of tijdslot ontbreekt',
       disabledMsg: 'Extensie « Totaal per afdeling » uitgeschakeld: de structuur ' +
-        'van de Collect&Go-pagina is gewijzigd. De extensie moet worden bijgewerkt.'
+        'van de Collect&Go-pagina is gewijzigd. De extensie moet worden bijgewerkt.',
+      article: 'artikel',
+      articles: 'artikelen'
     }
   };
 
@@ -78,6 +82,9 @@
 
   // Rayons dont l'accordéon (détail par marque) est déplié (mémorisé en session).
   var expandedBrands = {};
+
+  // En-têtes de gauche dont l'accordéon « quantités » est déplié.
+  var expandedHeaders = {};
 
   // Repli initial (une fois) des accordéons natifs de la sidebar.
   var accAutoCollapsed = { handover: false, promo: false };
@@ -166,6 +173,7 @@
   var formatPrice = CGPure.formatPrice;
   var extractBrand = CGPure.extractBrand;
   var displayBrand = CGPure.displayBrand;
+  var parseQuantityFromName = CGPure.parseQuantityFromName;
 
   /**
    * Injecte une seule fois la feuille de style de l'extension.
@@ -251,6 +259,14 @@
       /* Alerte sur l'en-tête « Données pour le retrait » du site. */
       '.cg-acc-warn{color:#CB0000 !important;}',
       '.cg-warn-badge{margin-left:6px;}',
+      /* Accordéon « quantités » sur les en-têtes de rayon (à gauche). */
+      '.header.background-blue.cg-hdr{cursor:pointer;}',
+      '.cg-hdr-chevron{display:inline-block;margin-left:8px;font-size:0.8em;' +
+        'line-height:1;color:currentColor;transition:transform .12s ease;}',
+      '.header.background-blue[aria-expanded="true"] .cg-hdr-chevron{' +
+        'transform:rotate(90deg);}',
+      '.cg-hdr-panel{padding:6px 16px;font-size:0.85em;color:#48526d;' +
+        'background:#eef3fb;border-top:1px solid #dbe3ef;}',
       /* Bandeau « extension désactivée » (auto-test de structure). */
       '.cg-banner{display:flex;align-items:flex-start;gap:8px;font:inherit;' +
         'font-size:0.9em;line-height:1.35;box-sizing:border-box;}',
@@ -282,15 +298,70 @@
   }
 
   /**
-   * Calcule, pour une catégorie, le total et les sous-totaux par marque.
-   * Retourne { total, brands:[{brand,total}] } (brands trié décroissant),
-   * ou null si aucun prix n'a été trouvé.
+   * Prix unitaire principal d'un produit (sr-only « Prix: 1,70 € … »).
+   */
+  function readMainPrice(item) {
+    var sr = item.querySelector('.ds-product-price__price .sr-only');
+    return sr ? parsePrice(sr.textContent) : null;
+  }
+
+  /**
+   * Détermine la base de prix d'un produit et les prix au kg / au litre.
+   * Retourne { mainUnit:'pce'|'kg'|'l'|null, perKg, perL }.
+   */
+  function readUnitPrices(item) {
+    var mainUnit = null;
+    var unitEl = item.querySelector('.ds-product-price__price .ds-product-price__unit');
+    if (unitEl) {
+      var u = unitEl.textContent.replace('/', '').trim().toLowerCase();
+      if (u.indexOf('pce') === 0 || u === 'pc') mainUnit = 'pce';
+      else if (u === 'kg') mainUnit = 'kg';
+      else if (u === 'l') mainUnit = 'l';
+    }
+    var perKg = null;
+    var perL = null;
+    var sec = item.querySelector('.ds-product-price__unit-price .sr-only') ||
+      item.querySelector('.ds-product-price__unit-price');
+    if (sec) {
+      var txt = sec.textContent;
+      var val = parsePrice(txt);
+      if (val !== null) {
+        if (/kg|kilogramme/i.test(txt)) perKg = val;
+        else if (/litre|\bl\b|\/l/i.test(txt)) perL = val;
+      }
+    }
+    if (mainUnit === 'kg' && perKg === null) perKg = readMainPrice(item);
+    if (mainUnit === 'l' && perL === null) perL = readMainPrice(item);
+    return { mainUnit: mainUnit, perKg: perKg, perL: perL };
+  }
+
+  /**
+   * Nombre réel d'unités d'un produit (lecture du stepper × taille de pack).
+   * Retourne { value, isArticle } — isArticle=false pour le vrac au poids.
+   */
+  function readUnits(item) {
+    var input = item.querySelector('input.ds-input--number');
+    var val = input ? parseFloat(String(input.value || '').replace(',', '.')) : NaN;
+    if (isNaN(val)) val = 0;
+    var packEl = item.querySelector('.ds-input--number-append_pack');
+    var packSize = packEl ? parseInt(packEl.textContent, 10) : NaN;
+    if (!isNaN(packSize)) return { value: val * packSize, isArticle: true };
+    if (item.querySelector('.ds-input--number-unit')) {
+      return { value: val, isArticle: true }; // unité « pce/pcs »
+    }
+    return { value: val, isArticle: false };   // vrac au poids
+  }
+
+  /**
+   * Calcule, pour une catégorie, le total, les sous-totaux par marque et les
+   * agrégats de quantité (articles, poids, volume). Retourne null si aucun prix.
    */
   function computeCategory(category) {
     var items = category.querySelectorAll('.ds-product-list-item-container');
     var total = 0;
     var found = false;
     var brandMap = {};
+    var q = { units: 0, grams: 0, gramsPrice: 0, ml: 0, mlPrice: 0 };
 
     items.forEach(function (item) {
       var price = getItemPrice(item);
@@ -305,6 +376,23 @@
         : '';
       var brand = extractBrand(name) || t('noBrand');
       brandMap[brand] = (brandMap[brand] || 0) + price;
+
+      // Quantités.
+      var units = readUnits(item);
+      var up = readUnitPrices(item);
+      var qn = parseQuantityFromName(name);
+
+      if (units.isArticle) q.units += units.value;
+
+      var grams = null;
+      if (qn.grams != null && units.isArticle) grams = units.value * qn.grams;
+      else if (up.mainUnit === 'kg' && up.perKg) grams = (price / up.perKg) * 1000;
+      if (grams) { q.grams += grams; q.gramsPrice += price; }
+
+      var ml = null;
+      if (qn.ml != null && units.isArticle) ml = units.value * qn.ml;
+      else if (up.mainUnit === 'l' && up.perL) ml = (price / up.perL) * 1000;
+      if (ml) { q.ml += ml; q.mlPrice += price; }
     });
 
     if (!found) return null;
@@ -315,7 +403,7 @@
       return { brand: b, total: brandMap[b] };
     });
 
-    return { total: total, brands: brands };
+    return { total: total, brands: brands, quantities: q };
   }
 
   /**
@@ -731,6 +819,121 @@
   }
 
   /* ------------------------------------------------------------------ *
+   * Accordéon « quantités » sur les en-têtes de rayon (à gauche).        *
+   * On enrobe l'en-tête du site en accordéon (chevron + panneau), sans   *
+   * toucher à son contenu ; le panneau résume articles / poids / volume. *
+   * ------------------------------------------------------------------ */
+
+  function formatInt(n) { return String(Math.round(n)); }
+
+  function formatWeight(grams) {
+    if (grams < 1000) return Math.round(grams) + ' g';
+    return (grams / 1000).toFixed(1).replace('.', ',') + ' kg';
+  }
+
+  function formatVolume(ml) {
+    if (ml < 1000) return Math.round(ml) + ' ml';
+    var l = ml / 1000;
+    var s = (Math.round(l * 10) % 10 === 0) ? String(Math.round(l))
+      : l.toFixed(1).replace('.', ',');
+    return s + ' L';
+  }
+
+  /**
+   * Construit le résumé quantités d'un rayon (« 23 articles • ≈ 19,6 kg ·
+   * 2,21 €/kg • 12 L · 0,55 €/L »), ne gardant que les parties disponibles.
+   */
+  function buildQuantitySummary(q) {
+    if (!q) return '';
+    var groups = [];
+    if (q.units > 0) {
+      groups.push(formatInt(q.units) + ' ' + t(q.units > 1 ? 'articles' : 'article'));
+    }
+    if (q.grams > 0) {
+      var w = '≈ ' + formatWeight(q.grams);
+      if (q.gramsPrice > 0) w += ' · ' + formatPrice(q.gramsPrice / (q.grams / 1000)) + '/kg';
+      groups.push(w);
+    }
+    if (q.ml > 0) {
+      var v = formatVolume(q.ml);
+      if (q.mlPrice > 0) v += ' · ' + formatPrice(q.mlPrice / (q.ml / 1000)) + '/L';
+      groups.push(v);
+    }
+    return groups.join('  •  ');
+  }
+
+  function headerTitleOf(header) {
+    var el = header.querySelector('.title');
+    return el ? el.textContent.trim() : '';
+  }
+
+  /**
+   * Synchronise l'état (déplié/replié) d'un en-tête avec `expandedHeaders`.
+   */
+  function applyHeaderState(header) {
+    var title = headerTitleOf(header);
+    var open = expandedHeaders[title] === true;
+    header.setAttribute('aria-expanded', open ? 'true' : 'false');
+    var parent = header.parentNode;
+    var panel = parent && parent.querySelector
+      ? parent.querySelector('.cg-hdr-panel') : null;
+    if (panel) panel.hidden = !open;
+  }
+
+  /**
+   * (Re)pose l'accordéon « quantités » sur l'en-tête d'un rayon et met à jour
+   * son panneau. Idempotent. N'altère pas le contenu existant de l'en-tête.
+   */
+  function ensureHeaderAccordion(category, q) {
+    var header = category.querySelector('.header.background-blue');
+    if (!header) return;
+    var summary = buildQuantitySummary(q);
+
+    // Panneau (frère, juste après l'en-tête).
+    var parent = header.parentNode;
+    if (!parent) return;
+    var panel = parent.querySelector('.cg-hdr-panel');
+    if (!panel) {
+      panel = document.createElement('div');
+      panel.className = 'cg-hdr-panel';
+      panel.hidden = true;
+      parent.insertBefore(panel, header.nextSibling);
+    }
+    if (panel.textContent !== summary) panel.textContent = summary;
+
+    // Chevron (dans .title-and-chevron, l'emplacement prévu par le site).
+    var tac = header.querySelector('.title-and-chevron') || header;
+    var chevron = tac.querySelector('.cg-hdr-chevron');
+    if (!chevron) {
+      chevron = document.createElement('span');
+      chevron.className = 'cg-hdr-chevron';
+      chevron.textContent = '▸';
+      chevron.setAttribute('aria-hidden', 'true');
+      tac.appendChild(chevron);
+    }
+
+    // Pas de données : on n'affiche pas l'accordéon.
+    var hasData = summary !== '';
+    chevron.style.display = hasData ? '' : 'none';
+    if (hasData) header.classList.add('cg-hdr');
+    else header.classList.remove('cg-hdr');
+    if (!hasData) { expandedHeaders[headerTitleOf(header)] = false; }
+
+    // Clic = (dé)plier (listener posé une seule fois sur l'en-tête).
+    if (!header.__cgHdrBound) {
+      header.__cgHdrBound = true;
+      header.addEventListener('click', function () {
+        if (!header.classList.contains('cg-hdr')) return; // pas de données
+        var title = headerTitleOf(header);
+        expandedHeaders[title] = !(expandedHeaders[title] === true);
+        applyHeaderState(header);
+      });
+    }
+
+    applyHeaderState(header);
+  }
+
+  /* ------------------------------------------------------------------ *
    * Auto-test de structure : vérifie que la page expose toujours ce dont *
    * l'extension a besoin ; sinon, désactive et affiche un bandeau.       *
    * ------------------------------------------------------------------ */
@@ -844,6 +1047,7 @@
       var info = computeCategory(category);
       if (info === null) return;
       updateCountLabel(category, formatPrice(info.total));
+      ensureHeaderAccordion(category, info.quantities);
       // Le tri s'applique aussi aux marques au sein de chaque rayon.
       applySort(info.brands);
       rows.push({
