@@ -31,6 +31,7 @@ catégorie — pour savoir, d'un coup d'œil, combien coûte chaque rayon.**
 | ↕️ **Tri au choix** | Un menu déroulant trie le récap : montant décroissant, croissant, ou ordre de la liste. Le choix est mémorisé. |
 | 🔗 **Navigation en un clic** | Cliquer sur un rayon du récap fait défiler la page jusqu'à lui, qui clignote brièvement. |
 | 📌 **Colonne de droite figée** | La sidebar reste visible pendant le défilement (sticky, avec défilement interne si besoin). |
+| 🗂️ **Sections repliées** | Les blocs **« Données pour le retrait »** (adresse + horaire) et **« Code promo »** sont repliés par défaut pour gagner de la place ; si l'adresse ou l'horaire manque, un **⚠️** s'affiche et le titre passe en **rouge** tant que le bloc est replié. |
 | 🔄 **Toujours à jour** | Les totaux se recalculent automatiquement à chaque changement de quantité (réactivité Vue.js). |
 
 > Exemple, dans l'en-tête d'un rayon :

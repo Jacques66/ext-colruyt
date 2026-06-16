@@ -51,6 +51,9 @@
   // Rayons dont l'accordéon (détail par marque) est déplié (mémorisé en session).
   var expandedBrands = {};
 
+  // État des accordéons de la sidebar (retrait / code promo). Repliés par défaut.
+  var accCollapsed = { handover: true, promo: true };
+
   // Mode de tri courant du récap (mémorisé entre les recalculs / rechargements).
   var sortMode = loadSortMode();
 
@@ -175,7 +178,18 @@
       /* Garde la colonne de droite visible au scroll (avec défilement */
       /* interne si elle dépasse la hauteur de l'écran). */
       '.basket .sidebar{position:sticky;top:16px;align-self:flex-start;' +
-        'max-height:calc(100vh - 32px);overflow-y:auto;}'
+        'max-height:calc(100vh - 32px);overflow-y:auto;}',
+      /* Accordéons « repliés par défaut » (retrait + code promo). */
+      '.cg-acc .header.collapsible{display:none !important;}',
+      '.cg-acc.cg-collapsed .collapsible-content{display:none !important;}',
+      '.cg-acc-header{display:flex;align-items:center;gap:8px;cursor:pointer;' +
+        'padding:12px 0;-webkit-user-select:none;user-select:none;}',
+      '.cg-acc-header__chevron{flex:0 0 auto;color:#1C3661;font-size:0.8em;' +
+        'line-height:1;transition:transform .12s ease;}',
+      '.cg-acc:not(.cg-collapsed) .cg-acc-header__chevron{transform:rotate(90deg);}',
+      '.cg-acc-header__title{flex:1 1 auto;font-weight:700;color:#1C3661;}',
+      '.cg-acc-header__title.cg-warn{color:#CB0000;}',
+      '.cg-acc-header__warn{flex:0 0 auto;}'
     ].join('');
     (document.head || document.documentElement).appendChild(style);
   }
@@ -297,13 +311,37 @@
       titleEl.textContent = t('recapTitle');
     }
 
-    // Reconstruction complète de la liste (les valeurs et l'ordre changent) ;
-    // l'état déplié des accordéons est restauré via `expandedBrands`.
+    // On ne reconstruit la liste que si les données ont réellement changé
+    // (sinon le survol clignoterait, la page mutant en continu). L'état déplié
+    // des accordéons est restauré via `expandedBrands`.
     var list = recap.querySelector('.' + RECAP_CLASS + '__list');
+    var signature = recapSignature(rows);
+    if (list.getAttribute('data-cg-sig') === signature && list.firstChild) {
+      return;
+    }
+    list.setAttribute('data-cg-sig', signature);
     list.textContent = '';
     rows.forEach(function (row) {
       list.appendChild(buildRecapItem(row));
     });
+  }
+
+  /**
+   * Signature des données du récap (titres, totaux, marques, tri) : sert à
+   * éviter toute reconstruction inutile du DOM (et donc le scintillement).
+   */
+  function recapSignature(rows) {
+    var parts = [sortMode];
+    rows.forEach(function (r) {
+      parts.push(r.title + '=' + r.total.toFixed(2));
+      if (r.brands) {
+        r.brands.forEach(function (b) {
+          parts.push(b.brand + ':' + b.total.toFixed(2));
+        });
+      }
+      parts.push('#');
+    });
+    return parts.join('|');
   }
 
   /**
@@ -467,6 +505,112 @@
     }, 1300);
   }
 
+  /* ------------------------------------------------------------------ *
+   * Accordéons de la sidebar (retrait + code promo), repliés par défaut. *
+   * On remplace l'en-tête du site par le nôtre pour piloter l'état nous- *
+   * mêmes (sans désynchroniser le chevron de Vue), de façon idempotente. *
+   * ------------------------------------------------------------------ */
+
+  function getAccTitle(headerEl) {
+    var el = headerEl.querySelector('.handover-info-title, .promo-code-title');
+    return el ? el.textContent.trim() : '';
+  }
+
+  function isTimeslotMissing(wrapper) {
+    return !!wrapper.querySelector('.no-slot-text');
+  }
+
+  function isAddressMissing(wrapper) {
+    var a = wrapper.querySelector('.vue-address');
+    return !a || !a.textContent.trim();
+  }
+
+  function applyCollapsed(wrapper, collapsed) {
+    if (collapsed) wrapper.classList.add('cg-collapsed');
+    else wrapper.classList.remove('cg-collapsed');
+  }
+
+  /**
+   * Met à jour le ⚠️ et le titre rouge (rouge uniquement quand replié).
+   */
+  function updateAccWarning(wrapper, myHeader, isHandover, collapsed) {
+    var warnEl = myHeader.querySelector('.cg-acc-header__warn');
+    var titleEl = myHeader.querySelector('.cg-acc-header__title');
+    var missing = isHandover &&
+      (isAddressMissing(wrapper) || isTimeslotMissing(wrapper));
+    if (warnEl) warnEl.hidden = !missing;
+    if (titleEl) {
+      if (missing && collapsed) titleEl.classList.add('cg-warn');
+      else titleEl.classList.remove('cg-warn');
+    }
+  }
+
+  function buildAccHeader(titleText, id, wrapper, isHandover) {
+    var h = document.createElement('div');
+    h.className = 'cg-acc-header';
+
+    var chevron = document.createElement('span');
+    chevron.className = 'cg-acc-header__chevron';
+    chevron.textContent = '▸';
+
+    var title = document.createElement('span');
+    title.className = 'cg-acc-header__title';
+    title.textContent = titleText;
+
+    var warn = document.createElement('span');
+    warn.className = 'cg-acc-header__warn';
+    warn.textContent = '⚠️';
+    warn.hidden = true;
+
+    h.appendChild(chevron);
+    h.appendChild(title);
+    h.appendChild(warn);
+
+    h.addEventListener('click', function () {
+      accCollapsed[id] = !accCollapsed[id];
+      applyCollapsed(wrapper, accCollapsed[id]);
+      updateAccWarning(wrapper, h, isHandover, accCollapsed[id]);
+    });
+
+    return h;
+  }
+
+  /**
+   * (Re)pose nos en-têtes d'accordéon sur les blocs « retrait » et
+   * « code promo » de la sidebar. Idempotent : ré-applicable à chaque recalcul.
+   */
+  function ensureSidebarAccordions() {
+    var headers = document.querySelectorAll('.sidebar .header.collapsible');
+    headers.forEach(function (headerEl) {
+      var wrapper = headerEl.parentElement;
+      if (!wrapper) return;
+      if (!wrapper.querySelector('.collapsible-content')) return;
+
+      var isHandover = !!headerEl.querySelector('.handover-info-title');
+      var isPromo = !!headerEl.querySelector('.promo-code-title');
+      if (!isHandover && !isPromo) return;
+      var id = isHandover ? 'handover' : 'promo';
+
+      wrapper.classList.add('cg-acc');
+      applyCollapsed(wrapper, accCollapsed[id]);
+
+      var myHeader = wrapper.querySelector('.cg-acc-header');
+      if (!myHeader) {
+        myHeader = buildAccHeader(getAccTitle(headerEl), id, wrapper, isHandover);
+        wrapper.insertBefore(myHeader, wrapper.firstChild);
+      } else {
+        // Garde le titre synchrone (langue / changement de libellé).
+        var titleEl = myHeader.querySelector('.cg-acc-header__title');
+        var titleText = getAccTitle(headerEl);
+        if (titleEl && titleText && titleEl.textContent !== titleText) {
+          titleEl.textContent = titleText;
+        }
+      }
+
+      updateAccWarning(wrapper, myHeader, isHandover, accCollapsed[id]);
+    });
+  }
+
   /**
    * Recalcule l'ensemble : libellés par catégorie + récapitulatif sidebar.
    */
@@ -491,6 +635,9 @@
     applySort(rows);
 
     renderRecap(rows);
+
+    // Accordéons de la sidebar (retrait + code promo).
+    ensureSidebarAccordions();
   }
 
   // Debounce avec délai maximal : on regroupe les mutations rapprochées, mais
