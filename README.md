@@ -194,8 +194,8 @@ d'éventuels dysfonctionnements liés aux **modifications futures de la page
 Collect&Go**, qui peut évoluer à tout moment.
 
 Nous **ne nous engageons pas** à maintenir ou à mettre à jour l'extension à
-l'avenir. Cela dit, comme nous l'utilisons nous-mêmes au quotidien, c'est un
-bon indice que nous ne traînerons pas pour la corriger 😉
+l'avenir. Cela dit, comme nous l'utilisons nous-mêmes au quotidien, il s'agit
+d'un bon indice que nous ne traînerons pas pour la corriger 😉
 
 ---
 
