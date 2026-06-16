@@ -272,13 +272,13 @@
       '.header.background-blue[aria-expanded="true"] .cg-hdr-chevron{' +
         'transform:rotate(180deg);}',
       '.cg-hdr-panel{padding:8px 16px;font-size:0.85em;color:#1C3661;' +
-        'background:#eef3fb;border-top:1px solid #dbe3ef;}',
+        'background:#eef3fb;border-top:1px solid #dbe3ef;text-align:right;}',
       '.cg-hdr-grid{display:inline-grid;grid-template-columns:auto auto auto;' +
         'gap:3px 16px;align-items:baseline;}',
-      '.cg-hdr-full{grid-column:1 / -1;}',
-      '.cg-hdr-k{color:#63708a;}',
-      '.cg-hdr-v{white-space:nowrap;}',
-      '.cg-hdr-u{white-space:nowrap;color:#63708a;}',
+      '.cg-hdr-full{grid-column:1 / -1;text-align:right;}',
+      '.cg-hdr-k{text-align:left;color:#63708a;}',
+      '.cg-hdr-v{text-align:right;white-space:nowrap;}',
+      '.cg-hdr-u{text-align:right;white-space:nowrap;color:#63708a;}',
       /* Bandeau « extension désactivée » (auto-test de structure). */
       '.cg-banner{display:flex;align-items:flex-start;gap:8px;font:inherit;' +
         'font-size:0.9em;line-height:1.35;box-sizing:border-box;}',
