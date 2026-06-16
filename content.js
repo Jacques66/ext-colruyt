@@ -50,7 +50,10 @@
       disabledMsg: 'Extension « Totaux par rayon » désactivée : la structure de ' +
         'la page Collect&Go a changé. L\'extension doit être mise à jour.',
       article: 'article',
-      articles: 'articles'
+      articles: 'articles',
+      qArticles: 'Articles',
+      qWeight: 'Poids',
+      qVolume: 'Volume'
     },
     nl: {
       recapTitle: 'Totaal per afdeling',
@@ -64,7 +67,10 @@
       disabledMsg: 'Extensie « Totaal per afdeling » uitgeschakeld: de structuur ' +
         'van de Collect&Go-pagina is gewijzigd. De extensie moet worden bijgewerkt.',
       article: 'artikel',
-      articles: 'artikelen'
+      articles: 'artikelen',
+      qArticles: 'Artikelen',
+      qWeight: 'Gewicht',
+      qVolume: 'Volume'
     }
   };
 
@@ -265,8 +271,13 @@
         'color:currentColor;transition:transform .12s ease;}',
       '.header.background-blue[aria-expanded="true"] .cg-hdr-chevron{' +
         'transform:rotate(180deg);}',
-      '.cg-hdr-panel{padding:6px 16px;font-size:0.85em;color:#48526d;' +
+      '.cg-hdr-panel{padding:8px 16px;font-size:0.85em;color:#1C3661;' +
         'background:#eef3fb;border-top:1px solid #dbe3ef;}',
+      '.cg-hdr-grid{display:grid;grid-template-columns:auto 1fr auto;' +
+        'gap:3px 18px;align-items:baseline;}',
+      '.cg-hdr-k{color:#63708a;}',
+      '.cg-hdr-v{text-align:right;white-space:nowrap;}',
+      '.cg-hdr-u{text-align:right;white-space:nowrap;color:#63708a;}',
       /* Bandeau « extension désactivée » (auto-test de structure). */
       '.cg-banner{display:flex;align-items:flex-start;gap:8px;font:inherit;' +
         'font-size:0.9em;line-height:1.35;box-sizing:border-box;}',
@@ -843,23 +854,33 @@
    * Construit le résumé quantités d'un rayon (« 23 articles • ≈ 19,6 kg ·
    * 2,21 €/kg • 12 L · 0,55 €/L »), ne gardant que les parties disponibles.
    */
-  function buildQuantitySummary(q) {
-    if (!q) return '';
-    var groups = [];
+  /**
+   * Lignes du panneau quantités : [{ label, value, unit }], une par métrique
+   * disponible (articles / poids / volume). Colonnes : libellé · quantité · €.
+   */
+  function buildQuantityRows(q) {
+    if (!q) return [];
+    var rows = [];
     if (q.units > 0) {
-      groups.push(formatInt(q.units) + ' ' + t(q.units > 1 ? 'articles' : 'article'));
+      rows.push({ label: t('qArticles'), value: formatInt(q.units), unit: '' });
     }
     if (q.grams > 0) {
-      var w = '≈ ' + formatWeight(q.grams);
-      if (q.gramsPrice > 0) w += ' · ' + formatPrice(q.gramsPrice / (q.grams / 1000)) + '/kg';
-      groups.push(w);
+      rows.push({
+        label: t('qWeight'),
+        value: '≈ ' + formatWeight(q.grams),
+        unit: q.gramsPrice > 0
+          ? formatPrice(q.gramsPrice / (q.grams / 1000)) + '/kg' : ''
+      });
     }
     if (q.ml > 0) {
-      var v = formatVolume(q.ml);
-      if (q.mlPrice > 0) v += ' · ' + formatPrice(q.mlPrice / (q.ml / 1000)) + '/L';
-      groups.push(v);
+      rows.push({
+        label: t('qVolume'),
+        value: formatVolume(q.ml),
+        unit: q.mlPrice > 0
+          ? formatPrice(q.mlPrice / (q.ml / 1000)) + '/L' : ''
+      });
     }
-    return groups.join('  •  ');
+    return rows;
   }
 
   function headerTitleOf(header) {
@@ -887,7 +908,7 @@
   function ensureHeaderAccordion(category, q) {
     var header = category.querySelector('.header.background-blue');
     if (!header) return;
-    var summary = buildQuantitySummary(q);
+    var qrows = buildQuantityRows(q);
 
     // Panneau (frère, juste après l'en-tête).
     var parent = header.parentNode;
@@ -899,7 +920,30 @@
       panel.hidden = true;
       parent.insertBefore(panel, header.nextSibling);
     }
-    if (panel.textContent !== summary) panel.textContent = summary;
+
+    // Grille label · quantité · prix (reconstruite seulement si ça change).
+    var sig = JSON.stringify(qrows);
+    if (panel.getAttribute('data-cg-qsig') !== sig) {
+      panel.setAttribute('data-cg-qsig', sig);
+      panel.textContent = '';
+      var grid = document.createElement('div');
+      grid.className = 'cg-hdr-grid';
+      qrows.forEach(function (r) {
+        var k = document.createElement('span');
+        k.className = 'cg-hdr-k';
+        k.textContent = r.label;
+        var v = document.createElement('span');
+        v.className = 'cg-hdr-v';
+        v.textContent = r.value;
+        var u = document.createElement('span');
+        u.className = 'cg-hdr-u';
+        u.textContent = r.unit;
+        grid.appendChild(k);
+        grid.appendChild(v);
+        grid.appendChild(u);
+      });
+      panel.appendChild(grid);
+    }
 
     // Chevron (dans .title-and-chevron, l'emplacement prévu par le site).
     var tac = header.querySelector('.title-and-chevron') || header;
@@ -917,7 +961,7 @@
     }
 
     // Pas de données : on n'affiche pas l'accordéon.
-    var hasData = summary !== '';
+    var hasData = qrows.length > 0;
     chevron.style.display = hasData ? '' : 'none';
     if (hasData) header.classList.add('cg-hdr');
     else header.classList.remove('cg-hdr');
