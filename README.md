@@ -63,8 +63,12 @@ l'attribut `<html lang>` :
   (`5,98 €`, virgule décimale).
 - **Sections** : `.category` → en-tête `.header.background-blue` + liste de
   produits ; chaque produit est un `.ds-product-list-item-container`.
-- **Recalcul** : un `MutationObserver` sur le panier relance le calcul à chaque
-  mutation du DOM, avec un **debounce de ~300 ms**.
+- **Recalcul** : un `MutationObserver` ciblé sur le wrapper Vue
+  (`page-content`, avec repli sur `.basket` puis `body`) relance le calcul à
+  chaque changement (quantité, suppression, promo…). La temporisation regroupe
+  les mutations rapprochées (**~250 ms**) tout en garantissant une exécution
+  au plus tard après **~800 ms** — pour ne pas être « affamée » par les
+  mutations continues des scripts tiers de la page (chat, Tealium…).
 - **Idempotence** : les compteurs `.count` traités sont marqués
   (`data-cg-total-processed`) ; la valeur est mise à jour en place plutôt que de
   rajouter un nœud. Les libellés sont écrits via `textContent` (pas d'injection HTML).
