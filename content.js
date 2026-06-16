@@ -89,6 +89,31 @@
     try { window.localStorage.setItem(SORT_KEY, mode); } catch (e) { /* noop */ }
   }
 
+  // Options du tri (valeur + clé de libellé) pour le dropdown custom.
+  var SORT_OPTIONS = [
+    { value: 'desc', key: 'sortDesc' },
+    { value: 'asc', key: 'sortAsc' },
+    { value: 'page', key: 'sortPage' }
+  ];
+  function sortLabelKey(mode) {
+    for (var i = 0; i < SORT_OPTIONS.length; i++) {
+      if (SORT_OPTIONS[i].value === mode) return SORT_OPTIONS[i].key;
+    }
+    return SORT_OPTIONS[0].key;
+  }
+  // Ferme tout menu de tri ouvert (clic extérieur / Échap), posé une seule fois.
+  var sortDocBound = false;
+  function closeAllSortMenus() {
+    var menus = document.querySelectorAll('.' + RECAP_CLASS + '__sort-menu');
+    Array.prototype.forEach.call(menus, function (m) {
+      if (m.hidden) return;
+      m.hidden = true;
+      var btn = m.parentElement &&
+        m.parentElement.querySelector('.' + RECAP_CLASS + '__sort-button');
+      if (btn) btn.setAttribute('aria-expanded', 'false');
+    });
+  }
+
   /**
    * Trie (en place) une liste d'objets ayant une propriété `total`, selon le
    * mode courant. 'page' conserve l'ordre d'origine (DOM / apparition).
@@ -147,17 +172,29 @@
       '.' + RECAP_CLASS + '__header{display:flex;align-items:center;' +
         'justify-content:space-between;gap:8px;margin-bottom:6px;}',
       '.' + RECAP_CLASS + '__title{font-weight:700;color:#1C3661;}',
-      '.' + RECAP_CLASS + '__sort{-webkit-appearance:none;-moz-appearance:none;' +
-        'appearance:none;font:inherit;font-size:0.8em;color:#1C3661;' +
-        'background-color:#fff;background-repeat:no-repeat;' +
-        'background-position:right 5px center;background-size:9px;' +
-        'background-image:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%2712%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%231C3661%27 stroke-width=%272.2%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpath d=%27M6 9l6 6 6-6%27/%3E%3C/svg%3E");' +
-        'border:1px solid #cbd2e0;border-radius:5px;' +
-        'padding:2px 18px 2px 7px;cursor:pointer;' +
+      /* Dropdown de tri custom. */
+      '.' + RECAP_CLASS + '__sort{position:relative;}',
+      '.' + RECAP_CLASS + '__sort-button{display:inline-flex;align-items:center;' +
+        'gap:6px;font:inherit;font-size:0.8em;color:#1C3661;background:#fff;' +
+        'border:1px solid #cbd2e0;border-radius:5px;padding:3px 8px;' +
+        'line-height:1.2;cursor:pointer;' +
         'transition:border-color .12s ease,box-shadow .12s ease;}',
-      '.' + RECAP_CLASS + '__sort:hover{border-color:#0055A2;}',
-      '.' + RECAP_CLASS + '__sort:focus{outline:none;border-color:#0055A2;' +
-        'box-shadow:0 0 0 3px rgba(0,85,162,.15);}',
+      '.' + RECAP_CLASS + '__sort-button:hover{border-color:#0055A2;}',
+      '.' + RECAP_CLASS + '__sort-button[aria-expanded="true"]{' +
+        'border-color:#0055A2;box-shadow:0 0 0 3px rgba(0,85,162,.15);}',
+      '.' + RECAP_CLASS + '__sort-caret{font-size:0.9em;line-height:1;' +
+        'transition:transform .12s ease;}',
+      '.' + RECAP_CLASS + '__sort-button[aria-expanded="true"] .' +
+        RECAP_CLASS + '__sort-caret{transform:rotate(180deg);}',
+      '.' + RECAP_CLASS + '__sort-menu{position:absolute;top:calc(100% + 4px);' +
+        'right:0;z-index:30;margin:0;padding:4px;list-style:none;' +
+        'min-width:100%;background:#fff;border:1px solid #e2e4ed;' +
+        'border-radius:8px;box-shadow:0 8px 24px rgba(28,54,97,.16);}',
+      '.' + RECAP_CLASS + '__sort-option{padding:6px 10px;border-radius:5px;' +
+        'font-size:0.82em;color:#1C3661;white-space:nowrap;cursor:pointer;}',
+      '.' + RECAP_CLASS + '__sort-option:hover{background:#eef3fb;}',
+      '.' + RECAP_CLASS + '__sort-option[aria-selected="true"]{font-weight:700;' +
+        'color:#0055A2;}',
       '.' + RECAP_CLASS + '__row{display:flex;justify-content:space-between;' +
         'align-items:baseline;gap:12px;color:#1C3661;padding:3px 4px;' +
         'font-size:0.95em;cursor:pointer;border-radius:4px;' +
@@ -457,28 +494,95 @@
     title.className = RECAP_CLASS + '__title';
     title.textContent = t('recapTitle');
 
-    // Dropdown de tri.
-    var select = document.createElement('select');
-    select.className = RECAP_CLASS + '__sort';
-    [['desc', 'sortDesc'], ['asc', 'sortAsc'], ['page', 'sortPage']].forEach(
-      function (opt) {
-        var option = document.createElement('option');
-        option.value = opt[0];
-        option.textContent = t(opt[1]);
-        if (opt[0] === sortMode) option.selected = true;
-        select.appendChild(option);
-      }
-    );
-    select.addEventListener('change', function () {
-      sortMode = select.value;
-      saveSortMode(sortMode);
-      updateTotals();
+    // Dropdown de tri custom (menu homogène, identique sur tous les navigateurs).
+    var sort = document.createElement('div');
+    sort.className = RECAP_CLASS + '__sort';
+
+    var sortBtn = document.createElement('button');
+    sortBtn.type = 'button';
+    sortBtn.className = RECAP_CLASS + '__sort-button';
+    sortBtn.setAttribute('aria-haspopup', 'listbox');
+    sortBtn.setAttribute('aria-expanded', 'false');
+
+    var sortLabel = document.createElement('span');
+    sortLabel.className = RECAP_CLASS + '__sort-label';
+    sortLabel.textContent = t(sortLabelKey(sortMode));
+
+    var caret = document.createElement('span');
+    caret.className = RECAP_CLASS + '__sort-caret';
+    caret.textContent = '▾';
+    caret.setAttribute('aria-hidden', 'true');
+
+    sortBtn.appendChild(sortLabel);
+    sortBtn.appendChild(caret);
+
+    var menu = document.createElement('ul');
+    menu.className = RECAP_CLASS + '__sort-menu';
+    menu.setAttribute('role', 'listbox');
+    menu.hidden = true;
+
+    SORT_OPTIONS.forEach(function (opt) {
+      var li = document.createElement('li');
+      li.className = RECAP_CLASS + '__sort-option';
+      li.setAttribute('role', 'option');
+      li.setAttribute('data-value', opt.value);
+      li.setAttribute('aria-selected', opt.value === sortMode ? 'true' : 'false');
+      li.textContent = t(opt.key);
+      menu.appendChild(li);
     });
-    // Évite que le clic sur le select ne déclenche un scroll.
-    select.addEventListener('click', function (e) { e.stopPropagation(); });
+
+    // Ouvre/ferme le menu (stopPropagation pour ne pas fermer aussitôt).
+    sortBtn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var willOpen = menu.hidden;
+      closeAllSortMenus();
+      if (willOpen) {
+        menu.hidden = false;
+        sortBtn.setAttribute('aria-expanded', 'true');
+      }
+    });
+
+    // Sélection d'une option.
+    menu.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var li = e.target.closest
+        ? e.target.closest('.' + RECAP_CLASS + '__sort-option')
+        : null;
+      if (li) {
+        var val = li.getAttribute('data-value');
+        if (val && val !== sortMode) {
+          sortMode = val;
+          saveSortMode(sortMode);
+          sortLabel.textContent = t(sortLabelKey(sortMode));
+          Array.prototype.forEach.call(
+            menu.querySelectorAll('.' + RECAP_CLASS + '__sort-option'),
+            function (o) {
+              o.setAttribute(
+                'aria-selected',
+                o.getAttribute('data-value') === sortMode ? 'true' : 'false'
+              );
+            }
+          );
+          updateTotals();
+        }
+      }
+      closeAllSortMenus();
+    });
+
+    // Fermeture au clic extérieur / Échap (posée une seule fois).
+    if (!sortDocBound) {
+      sortDocBound = true;
+      document.addEventListener('click', closeAllSortMenus);
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') closeAllSortMenus();
+      });
+    }
+
+    sort.appendChild(sortBtn);
+    sort.appendChild(menu);
 
     header.appendChild(title);
-    header.appendChild(select);
+    header.appendChild(sort);
 
     var list = document.createElement('div');
     list.className = RECAP_CLASS + '__list';
