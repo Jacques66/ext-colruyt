@@ -69,6 +69,10 @@
 
   // Repli initial (une fois) des accordéons natifs de la sidebar.
   var accAutoCollapsed = { handover: false, promo: false };
+  var cgStartTime = Date.now();
+  // Fenêtre pendant laquelle on tente le repli initial (le temps que la
+  // sidebar Vue se rende), après quoi on n'y touche plus (respect de l'usager).
+  var AUTO_COLLAPSE_WINDOW_MS = 6000;
 
   // Mode de tri courant du récap (mémorisé entre les recalculs / rechargements).
   var sortMode = loadSortMode();
@@ -184,8 +188,10 @@
       /* Chevron de l'accordéon « détail par marque ». */
       '.' + RECAP_CLASS + '__toggle{flex:0 0 auto;width:14px;padding:0;' +
         'border:0;background:none;color:#1C3661;font-size:0.8em;line-height:1;' +
-        'cursor:pointer;transition:transform .12s ease;}',
-      '.' + RECAP_CLASS + '__toggle[aria-expanded="true"]{transform:rotate(90deg);}',
+        'cursor:pointer;transform:scale(1.5);transform-origin:center;' +
+        'transition:transform .12s ease;}',
+      '.' + RECAP_CLASS + '__toggle[aria-expanded="true"]{' +
+        'transform:scale(1.5) rotate(90deg);}',
       '.' + RECAP_CLASS + '__spacer{flex:0 0 auto;width:14px;}',
       /* Détail par marque (sous-totaux) : indenté, avec trait guide. */
       '.' + RECAP_CLASS + '__brands{margin:2px 0 6px 9px;padding-left:13px;' +
@@ -589,9 +595,8 @@
       warn.hidden = !missing;
     }
 
-    // Rouge quand le bloc est replié (et qu'il manque quelque chose).
-    var collapsed = !isCollapsibleOpen(wrapper);
-    if (missing && collapsed) titleEl.classList.add('cg-acc-warn');
+    // Titre en rouge tant qu'il manque l'adresse ou l'horaire (ouvert ou fermé).
+    if (missing) titleEl.classList.add('cg-acc-warn');
     else titleEl.classList.remove('cg-acc-warn');
   }
 
@@ -611,10 +616,17 @@
       var id = isHandover ? 'handover' : 'promo';
 
       // Replier une seule fois, avec le mécanisme du site (chevron + contenu
-      // restent cohérents). L'utilisateur reste libre de rouvrir ensuite.
+      // restent cohérents). On réessaie tant que le bloc n'est pas encore
+      // rendu/ouvert ; passé la fenêtre, on n'y touche plus (respect de
+      // l'usager, qui reste libre de replier/déplier ensuite).
       if (!accAutoCollapsed[id]) {
-        if (isCollapsibleOpen(wrapper)) headerEl.click();
-        accAutoCollapsed[id] = true;
+        if (isCollapsibleOpen(wrapper)) {
+          var clicker = headerEl.querySelector('.title-and-chevron') || headerEl;
+          clicker.click();
+          accAutoCollapsed[id] = true;
+        } else if (Date.now() - cgStartTime > AUTO_COLLAPSE_WINDOW_MS) {
+          accAutoCollapsed[id] = true;
+        }
       }
 
       if (isHandover) updateHandoverWarning(headerEl, wrapper);
