@@ -1,15 +1,18 @@
 /**
- * Collect&Go — Totaux par catégorie
+ * Totaux par rayon — pour Collect&Go (extension non officielle)
  *
  * 1. Pour chaque section de catégorie du chariot, additionne le prix total de
  *    chaque produit et ajoute ce total en gras à côté du compteur
  *    « X produits » (sur une seule ligne).
  * 2. Affiche un récapitulatif « Total par rayon » dans la sidebar, juste
- *    après le « Total estimé ».
+ *    après le « Total estimé », avec tri (dropdown) et clic-pour-scroller.
+ * 3. Chaque rayon du récap est un accordéon qui dévoile les sous-totaux par
+ *    marque (la marque = le token en majuscules en tête de libellé produit).
  *
- * Le calcul est relancé à chaque mutation du DOM (réactivité Vue.js) avec un
- * debounce de ~300ms. Les compteurs déjà traités sont marqués via un attribut
- * data- pour mettre à jour la valeur plutôt que d'ajouter un nouveau nœud.
+ * Le calcul est relancé à chaque mutation du DOM du panier (réactivité Vue.js),
+ * avec un debounce (~250ms, exécution garantie sous ~800ms). Les compteurs
+ * déjà traités sont marqués via un attribut data- pour mettre à jour la valeur
+ * plutôt que d'ajouter un nouveau nœud.
  */
 (function () {
   'use strict';
@@ -31,15 +34,22 @@
       recapTitle: 'Total par rayon',
       sortDesc: 'Montant décroissant',
       sortAsc: 'Montant croissant',
-      sortPage: 'Ordre de la liste'
+      sortPage: 'Ordre de la liste',
+      noBrand: 'Sans marque',
+      toggleBrands: 'Afficher / masquer le détail par marque'
     },
     nl: {
       recapTitle: 'Totaal per afdeling',
       sortDesc: 'Bedrag aflopend',
       sortAsc: 'Bedrag oplopend',
-      sortPage: 'Volgorde van de lijst'
+      sortPage: 'Volgorde van de lijst',
+      noBrand: 'Geen merk',
+      toggleBrands: 'Detail per merk tonen / verbergen'
     }
   };
+
+  // Rayons dont l'accordéon (détail par marque) est déplié (mémorisé en session).
+  var expandedBrands = {};
 
   // Mode de tri courant du récap (mémorisé entre les recalculs / rechargements).
   var sortMode = loadSortMode();
@@ -139,9 +149,23 @@
       '.' + RECAP_CLASS + '__row:hover{background-color:#eef3fb;}',
       '.' + RECAP_CLASS + '__row:hover .' + RECAP_CLASS + '__name{' +
         'text-decoration:underline;}',
-      '.' + RECAP_CLASS + '__name{overflow:hidden;text-overflow:ellipsis;' +
+      '.' + RECAP_CLASS + '__name{flex:1 1 auto;min-width:0;overflow:hidden;' +
+        'text-overflow:ellipsis;white-space:nowrap;}',
+      '.' + RECAP_CLASS + '__value{flex:0 0 auto;font-weight:600;' +
         'white-space:nowrap;}',
-      '.' + RECAP_CLASS + '__value{font-weight:600;white-space:nowrap;}',
+      /* Chevron de l'accordéon « détail par marque ». */
+      '.' + RECAP_CLASS + '__toggle{flex:0 0 auto;width:14px;padding:0;' +
+        'border:0;background:none;color:#1C3661;font-size:0.8em;line-height:1;' +
+        'cursor:pointer;transition:transform .12s ease;}',
+      '.' + RECAP_CLASS + '__toggle[aria-expanded="true"]{transform:rotate(90deg);}',
+      '.' + RECAP_CLASS + '__spacer{flex:0 0 auto;width:14px;}',
+      /* Détail par marque (sous-totaux). */
+      '.' + RECAP_CLASS + '__brands{margin:0 0 4px 18px;}',
+      '.' + RECAP_CLASS + '__brand{display:flex;justify-content:space-between;' +
+        'gap:12px;color:#48526d;font-size:0.85em;padding:1px 4px;}',
+      '.' + RECAP_CLASS + '__brand-name{overflow:hidden;text-overflow:ellipsis;' +
+        'white-space:nowrap;}',
+      '.' + RECAP_CLASS + '__brand-value{flex:0 0 auto;white-space:nowrap;}',
       /* Décalage pour ne pas masquer le rayon sous l'en-tête au scroll. */
       '.category{scroll-margin-top:100px;}',
       /* Flash visuel sur le rayon ciblé. */
@@ -157,28 +181,68 @@
   }
 
   /**
-   * Calcule le total d'une catégorie (somme des prix produits desktop).
-   * Retourne null si aucun prix n'a été trouvé.
+   * Extrait la marque d'un libellé produit : le token de tête s'il est en
+   * majuscules (ex. « BONI ananas… » -> « BONI », « DUYVIS CRAC-A-NUT… » ->
+   * « DUYVIS »). Retourne null sinon (ex. « Abricot rouge 500g »).
    */
-  function computeCategoryTotal(category) {
+  function extractBrand(title) {
+    if (!title) return null;
+    var first = (title.trim().split(/\s+/)[0] || '');
+    if (first.length >= 2 && /[A-ZÀ-Ý]/.test(first) && first === first.toUpperCase()) {
+      return first;
+    }
+    return null;
+  }
+
+  /**
+   * Récupère le prix total (desktop) d'un produit.
+   */
+  function getItemPrice(item) {
+    var priceEls = item.querySelectorAll('.ds-product-total-price.is-p1__bold');
+    var price = null;
+    priceEls.forEach(function (priceEl) {
+      // Version desktop uniquement : exclure la version --mobile.
+      if (priceEl.classList.contains('--mobile')) return;
+      var value = parsePrice(priceEl.textContent);
+      if (value !== null) price = (price || 0) + value;
+    });
+    return price;
+  }
+
+  /**
+   * Calcule, pour une catégorie, le total et les sous-totaux par marque.
+   * Retourne { total, brands:[{brand,total}] } (brands trié décroissant),
+   * ou null si aucun prix n'a été trouvé.
+   */
+  function computeCategory(category) {
     var items = category.querySelectorAll('.ds-product-list-item-container');
     var total = 0;
     var found = false;
+    var brandMap = {};
 
     items.forEach(function (item) {
-      // Version desktop uniquement : exclure la version --mobile.
-      var priceEls = item.querySelectorAll('.ds-product-total-price.is-p1__bold');
-      priceEls.forEach(function (priceEl) {
-        if (priceEl.classList.contains('--mobile')) return;
-        var value = parsePrice(priceEl.textContent);
-        if (value !== null) {
-          total += value;
-          found = true;
-        }
-      });
+      var price = getItemPrice(item);
+      if (price === null) return;
+      total += price;
+      found = true;
+
+      var titleEl = item.querySelector('.ds-product-tag span[role="heading"]') ||
+        item.querySelector('.ds-product-tag span');
+      var name = titleEl
+        ? (titleEl.getAttribute('title') || titleEl.textContent || '').trim()
+        : '';
+      var brand = extractBrand(name) || t('noBrand');
+      brandMap[brand] = (brandMap[brand] || 0) + price;
     });
 
-    return found ? total : null;
+    if (!found) return null;
+
+    var brands = Object.keys(brandMap).map(function (b) {
+      return { brand: b, total: brandMap[b] };
+    });
+    brands.sort(function (a, b) { return b.total - a.total; });
+
+    return { total: total, brands: brands };
   }
 
   /**
@@ -233,35 +297,95 @@
       titleEl.textContent = t('recapTitle');
     }
 
-    // Liste des lignes : on ne reconstruit le HTML que si le nombre change.
+    // Reconstruction complète de la liste (les valeurs et l'ordre changent) ;
+    // l'état déplié des accordéons est restauré via `expandedBrands`.
     var list = recap.querySelector('.' + RECAP_CLASS + '__list');
-    if (list.getAttribute('data-cg-rows') !== String(rows.length)) {
-      var parts = [];
-      for (var i = 0; i < rows.length; i++) {
-        parts.push(
-          '<div class="' + RECAP_CLASS + '__row">' +
-            '<span class="' + RECAP_CLASS + '__name"></span>' +
-            '<span class="' + RECAP_CLASS + '__value"></span>' +
-          '</div>'
-        );
-      }
-      list.innerHTML = parts.join('');
-      list.setAttribute('data-cg-rows', String(rows.length));
+    list.textContent = '';
+    rows.forEach(function (row) {
+      list.appendChild(buildRecapItem(row));
+    });
+  }
+
+  /**
+   * Construit un item du récap : ligne (chevron + nom + total) et, si plus
+   * d'une marque, le panneau accordéon des sous-totaux par marque.
+   */
+  function buildRecapItem(row) {
+    var hasBrands = row.brands && row.brands.length > 1;
+    var expanded = hasBrands && expandedBrands[row.title] === true;
+
+    var item = document.createElement('div');
+    item.className = RECAP_CLASS + '__item';
+    item.setAttribute('data-cg-cat', row.title);
+
+    var rowEl = document.createElement('div');
+    rowEl.className = RECAP_CLASS + '__row';
+    // Référence vers le rayon (pour le scroll au clic sur le nom).
+    rowEl.__cgCategory = row.category;
+
+    // Chevron (ou simple espace pour aligner les rayons mono-marque).
+    if (hasBrands) {
+      var toggle = document.createElement('button');
+      toggle.type = 'button';
+      toggle.className = RECAP_CLASS + '__toggle';
+      toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+      toggle.setAttribute('aria-label', t('toggleBrands'));
+      toggle.textContent = '▸';
+      rowEl.appendChild(toggle);
+    } else {
+      var spacer = document.createElement('span');
+      spacer.className = RECAP_CLASS + '__spacer';
+      rowEl.appendChild(spacer);
     }
 
-    // Remplir / réordonner les lignes (textContent => pas d'injection HTML).
-    var rowEls = list.querySelectorAll('.' + RECAP_CLASS + '__row');
-    rows.forEach(function (row, i) {
-      var rowEl = rowEls[i];
-      if (!rowEl) return;
-      // Référence vers le rayon (l'ordre change selon le tri choisi).
-      rowEl.__cgCategory = row.category;
-      var nameEl = rowEl.querySelector('.' + RECAP_CLASS + '__name');
-      var valueEl = rowEl.querySelector('.' + RECAP_CLASS + '__value');
-      if (nameEl && nameEl.textContent !== row.title) nameEl.textContent = row.title;
-      var valueText = formatPrice(row.total);
-      if (valueEl && valueEl.textContent !== valueText) valueEl.textContent = valueText;
-    });
+    var name = document.createElement('span');
+    name.className = RECAP_CLASS + '__name';
+    name.textContent = row.title;
+    rowEl.appendChild(name);
+
+    var value = document.createElement('span');
+    value.className = RECAP_CLASS + '__value';
+    value.textContent = formatPrice(row.total);
+    rowEl.appendChild(value);
+
+    item.appendChild(rowEl);
+
+    if (hasBrands) {
+      var panel = document.createElement('div');
+      panel.className = RECAP_CLASS + '__brands';
+      panel.hidden = !expanded;
+      row.brands.forEach(function (b) {
+        var line = document.createElement('div');
+        line.className = RECAP_CLASS + '__brand';
+        var bn = document.createElement('span');
+        bn.className = RECAP_CLASS + '__brand-name';
+        bn.textContent = b.brand;
+        var bv = document.createElement('span');
+        bv.className = RECAP_CLASS + '__brand-value';
+        bv.textContent = formatPrice(b.total);
+        line.appendChild(bn);
+        line.appendChild(bv);
+        panel.appendChild(line);
+      });
+      item.appendChild(panel);
+    }
+
+    return item;
+  }
+
+  /**
+   * Déplie / replie l'accordéon des marques d'un item.
+   */
+  function toggleRecapItem(item) {
+    var title = item.getAttribute('data-cg-cat');
+    var open = !(expandedBrands[title] === true);
+    if (open) expandedBrands[title] = true;
+    else delete expandedBrands[title];
+
+    var panel = item.querySelector('.' + RECAP_CLASS + '__brands');
+    var toggle = item.querySelector('.' + RECAP_CLASS + '__toggle');
+    if (panel) panel.hidden = !open;
+    if (toggle) toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
   }
 
   /**
@@ -307,13 +431,18 @@
 
     var list = document.createElement('div');
     list.className = RECAP_CLASS + '__list';
-    // Clic sur une ligne => scroll vers le rayon (listener délégué).
+    // Listener délégué : chevron => (dé)plie le détail par marque ;
+    // clic sur le nom => scroll vers le rayon.
     list.addEventListener('click', function (e) {
-      var rowEl = e.target.closest
-        ? e.target.closest('.' + RECAP_CLASS + '__row')
-        : null;
-      if (!rowEl || !rowEl.__cgCategory) return;
-      scrollToCategory(rowEl.__cgCategory);
+      if (!e.target.closest) return;
+      var toggle = e.target.closest('.' + RECAP_CLASS + '__toggle');
+      if (toggle) {
+        var item = toggle.closest('.' + RECAP_CLASS + '__item');
+        if (item) toggleRecapItem(item);
+        return;
+      }
+      var rowEl = e.target.closest('.' + RECAP_CLASS + '__row');
+      if (rowEl && rowEl.__cgCategory) scrollToCategory(rowEl.__cgCategory);
     });
 
     recap.appendChild(header);
@@ -346,13 +475,13 @@
     var rows = [];
 
     categories.forEach(function (category) {
-      var total = computeCategoryTotal(category);
-      if (total === null) return;
-      var totalText = formatPrice(total);
-      updateCountLabel(category, totalText);
+      var info = computeCategory(category);
+      if (info === null) return;
+      updateCountLabel(category, formatPrice(info.total));
       rows.push({
         title: getCategoryTitle(category),
-        total: total,
+        total: info.total,
+        brands: info.brands,
         category: category
       });
     });
