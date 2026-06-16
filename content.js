@@ -396,14 +396,17 @@
 
       if (units.isArticle) q.units += units.value;
 
+      // Poids/volume dérivés du bloc de prix (total ÷ €/kg, total ÷ €/L) afin
+      // que numérateur et dénominateur restent synchrones → moyenne stable et
+      // « €/kg × poids = total ». Repli sur le libellé si pas de prix au kg/L.
       var grams = null;
-      if (qn.grams != null && units.isArticle) grams = units.value * qn.grams;
-      else if (up.mainUnit === 'kg' && up.perKg) grams = (price / up.perKg) * 1000;
+      if (up.perKg) grams = (price / up.perKg) * 1000;
+      else if (qn.grams != null && units.isArticle) grams = units.value * qn.grams;
       if (grams) { q.grams += grams; q.gramsPrice += price; }
 
       var ml = null;
-      if (qn.ml != null && units.isArticle) ml = units.value * qn.ml;
-      else if (up.mainUnit === 'l' && up.perL) ml = (price / up.perL) * 1000;
+      if (up.perL) ml = (price / up.perL) * 1000;
+      else if (qn.ml != null && units.isArticle) ml = units.value * qn.ml;
       if (ml) { q.ml += ml; q.mlPrice += price; }
     });
 
