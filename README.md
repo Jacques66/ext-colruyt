@@ -23,18 +23,17 @@ catégorie — pour savoir, d'un coup d'œil, combien coûte chaque rayon.**
 
 ## 📸 Aperçu
 
-<!--
-  Déposez les captures dans docs/screenshots/ (voir le README de ce dossier).
-  Tant que les fichiers ne sont pas présents, GitHub affiche le texte alternatif.
--->
+### Totaux par rayon dans la liste
 
-<p align="center">
-  <img src="docs/screenshots/recap-sidebar.png" alt="Récap « Total par rayon » avec accordéons par marque et pastilles marque propre" width="420">
-</p>
+| Avant | Après |
+|:---:|:---:|
+| ![En-tête de rayon sans total](docs/screenshots/liste-rayons-before.png) | ![En-tête de rayon avec le total ajouté](docs/screenshots/liste-rayons-after.png) |
 
-<p align="center">
-  <img src="docs/screenshots/list-totals.png" alt="Totaux par rayon dans la grande liste, à côté du compteur de produits" width="720">
-</p>
+### Récapitulatif dans la sidebar
+
+| Avant | Après |
+|:---:|:---:|
+| ![Sidebar d'origine](docs/screenshots/recap-before.png) | ![Sidebar avec le récap « Total par rayon »](docs/screenshots/recap-after.png) |
 
 ---
 

@@ -1,13 +1,13 @@
 # Captures d'écran
 
-Déposez ici les captures référencées par le `README.md` principal, avec ces
-noms de fichiers exacts :
+Captures utilisées par le `README.md` principal (paires avant / après) :
 
-| Fichier | Contenu attendu |
+| Fichier | Contenu |
 |---|---|
-| `recap-sidebar.png` | Le récap « Total par rayon » (accordéons ouverts + pastilles MDD). |
-| `list-totals.png` | La grande liste avec les totaux par rayon à côté du compteur. |
-| `collapsed-sections.png` | Les sections « retrait » / « code promo » repliées (avec ⚠️ si besoin). |
+| `liste-rayons-before.png` | En-tête de rayon d'origine (« 2 produits »). |
+| `liste-rayons-after.png` | En-tête de rayon avec le total ajouté (« 2 produits — 26,49 € »). |
+| `recap-before.png` | Sidebar d'origine. |
+| `recap-after.png` | Sidebar avec le récap « Total par rayon ». |
 
-Astuce : des images d'environ **800–1000 px de large** suffisent et gardent le
-README léger.
+Conseil : des noms de fichiers **sans espace ni accent** évitent les soucis
+d'encodage d'URL dans le Markdown.
