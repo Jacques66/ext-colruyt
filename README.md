@@ -178,7 +178,8 @@ reprise (une collaboration est d'ailleurs toujours possible 😉).
 
 ## ⚖️ Garantie & maintenance
 
-Ce projet est fourni **« tel quel » (_as-is_)**, sans aucune garantie.
+Ce projet est fourni **« tel quel » (_as-is_)**, sans aucune garantie d'aucune
+sorte.
 InZeMobile SRL **ne saurait être tenue responsable**, de quelque manière que ce
 soit, des conséquences de son utilisation — notamment, mais pas seulement,
 d'éventuels dysfonctionnements liés aux **modifications futures de la page
