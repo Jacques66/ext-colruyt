@@ -223,6 +223,12 @@
       rows.push({ title: getCategoryTitle(category), total: total });
     });
 
+    // Récap trié par montant décroissant (les libellés des compteurs dans la
+    // liste, eux, restent dans l'ordre de la page).
+    rows.sort(function (a, b) {
+      return b.total - a.total;
+    });
+
     renderRecap(rows);
   }
 
