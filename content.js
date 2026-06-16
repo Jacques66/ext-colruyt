@@ -1,8 +1,11 @@
 /**
  * Collect&Go — Totaux par catégorie
  *
- * Pour chaque section de catégorie du chariot, additionne le prix total de
- * chaque produit et ajoute ce total en gras à côté du compteur « X produits ».
+ * 1. Pour chaque section de catégorie du chariot, additionne le prix total de
+ *    chaque produit et ajoute ce total en gras à côté du compteur
+ *    « X produits » (sur une seule ligne).
+ * 2. Affiche un récapitulatif « Total par rayon » dans la sidebar, juste
+ *    après le « Total estimé ».
  *
  * Le calcul est relancé à chaque mutation du DOM (réactivité Vue.js) avec un
  * debounce de ~300ms. Les compteurs déjà traités sont marqués via un attribut
@@ -13,19 +16,18 @@
 
   var PROCESSED_ATTR = 'data-cg-total-processed';
   var TOTAL_CLASS = 'cg-category-total';
+  var RECAP_CLASS = 'cg-category-recap';
+  var STYLE_ID = 'cg-category-total-styles';
   var DEBOUNCE_MS = 300;
 
   /**
-   * Convertit un prix au format européen ("5,98 €" / "1 234,56 €") en nombre.
+   * Convertit un prix au format européen ("5,98 €" / "1 234,56 €") en nombre.
    * Retourne null si aucun nombre n'est trouvé.
    */
   function parsePrice(text) {
     if (!text) return null;
     // Conserver uniquement chiffres, virgules, points et signe négatif.
-    var cleaned = text
-      .replace(/ /g, ' ')
-      .replace(/[^0-9,.\-]/g, '')
-      .trim();
+    var cleaned = text.replace(/[^0-9,.\-]/g, '').trim();
     if (!cleaned) return null;
     // Séparateur décimal = virgule. Supprimer les séparateurs de milliers (points).
     cleaned = cleaned.replace(/\./g, '').replace(',', '.');
@@ -41,61 +43,153 @@
   }
 
   /**
-   * Calcule et affiche le total pour chaque catégorie présente dans le panier.
+   * Injecte une seule fois la feuille de style de l'extension.
+   */
+  function injectStyles() {
+    if (document.getElementById(STYLE_ID)) return;
+    var style = document.createElement('style');
+    style.id = STYLE_ID;
+    style.textContent = [
+      /* Compteur de catégorie sur une seule ligne. */
+      '.category-heading .count{white-space:nowrap;}',
+      '.' + TOTAL_CLASS + '{white-space:nowrap;}',
+      /* Récapitulatif « Total par rayon » dans la sidebar. */
+      '.' + RECAP_CLASS + '{margin-top:12px;padding-top:12px;' +
+        'border-top:1px solid #d9dde6;}',
+      '.' + RECAP_CLASS + '__title{font-weight:700;color:#1C3661;' +
+        'margin-bottom:6px;}',
+      '.' + RECAP_CLASS + '__row{display:flex;justify-content:space-between;' +
+        'align-items:baseline;gap:12px;color:#1C3661;padding:3px 0;' +
+        'font-size:0.95em;}',
+      '.' + RECAP_CLASS + '__name{overflow:hidden;text-overflow:ellipsis;' +
+        'white-space:nowrap;}',
+      '.' + RECAP_CLASS + '__value{font-weight:600;white-space:nowrap;}'
+    ].join('');
+    (document.head || document.documentElement).appendChild(style);
+  }
+
+  /**
+   * Calcule le total d'une catégorie (somme des prix produits desktop).
+   * Retourne null si aucun prix n'a été trouvé.
+   */
+  function computeCategoryTotal(category) {
+    var items = category.querySelectorAll('.ds-product-list-item-container');
+    var total = 0;
+    var found = false;
+
+    items.forEach(function (item) {
+      // Version desktop uniquement : exclure la version --mobile.
+      var priceEls = item.querySelectorAll('.ds-product-total-price.is-p1__bold');
+      priceEls.forEach(function (priceEl) {
+        if (priceEl.classList.contains('--mobile')) return;
+        var value = parsePrice(priceEl.textContent);
+        if (value !== null) {
+          total += value;
+          found = true;
+        }
+      });
+    });
+
+    return found ? total : null;
+  }
+
+  /**
+   * Met à jour le total affiché à côté du compteur « X produits ».
+   */
+  function updateCountLabel(category, totalText) {
+    var countEl = category.querySelector('.category-heading .count');
+    if (!countEl) return;
+
+    if (countEl.getAttribute(PROCESSED_ATTR) === '1') {
+      var existing = countEl.querySelector('.' + TOTAL_CLASS);
+      if (existing) {
+        if (existing.textContent !== totalText) {
+          existing.textContent = totalText;
+        }
+        return;
+      }
+    }
+
+    // Première fois (ou nœud disparu) : ajouter le total au compteur.
+    var totalEl = document.createElement('strong');
+    totalEl.className = TOTAL_CLASS;
+    totalEl.textContent = totalText;
+
+    countEl.appendChild(document.createTextNode(' — '));
+    countEl.appendChild(totalEl);
+    countEl.setAttribute(PROCESSED_ATTR, '1');
+  }
+
+  /**
+   * Récupère le libellé d'une catégorie.
+   */
+  function getCategoryTitle(category) {
+    var titleEl = category.querySelector('.category-heading .title');
+    return titleEl ? titleEl.textContent.trim() : '';
+  }
+
+  /**
+   * Construit / met à jour le récapitulatif « Total par rayon » dans la sidebar,
+   * juste après le bloc « Total estimé ».
+   */
+  function renderRecap(rows) {
+    // Ancrage : le bloc des totaux de la sidebar (Produits, Réductions, …).
+    var orderTotals = document.querySelector('.sidebar .order-totals');
+    if (!orderTotals) return;
+
+    var recap = orderTotals.querySelector('.' + RECAP_CLASS);
+    if (!recap) {
+      recap = document.createElement('div');
+      recap.className = RECAP_CLASS;
+      // Ajouté en fin de bloc => juste après la ligne « Total estimé ».
+      orderTotals.appendChild(recap);
+    }
+
+    var parts = ['<div class="' + RECAP_CLASS + '__title">Total par rayon</div>'];
+    rows.forEach(function (row) {
+      parts.push(
+        '<div class="' + RECAP_CLASS + '__row">' +
+          '<span class="' + RECAP_CLASS + '__name"></span>' +
+          '<span class="' + RECAP_CLASS + '__value"></span>' +
+        '</div>'
+      );
+    });
+
+    var newHtml = parts.join('');
+    if (recap.getAttribute('data-cg-rows') !== String(rows.length)) {
+      recap.innerHTML = newHtml;
+      recap.setAttribute('data-cg-rows', String(rows.length));
+    }
+
+    // Remplir le texte (textContent => pas d'injection HTML).
+    var rowEls = recap.querySelectorAll('.' + RECAP_CLASS + '__row');
+    rows.forEach(function (row, i) {
+      var rowEl = rowEls[i];
+      if (!rowEl) return;
+      var nameEl = rowEl.querySelector('.' + RECAP_CLASS + '__name');
+      var valueEl = rowEl.querySelector('.' + RECAP_CLASS + '__value');
+      if (nameEl && nameEl.textContent !== row.title) nameEl.textContent = row.title;
+      var valueText = formatPrice(row.total);
+      if (valueEl && valueEl.textContent !== valueText) valueEl.textContent = valueText;
+    });
+  }
+
+  /**
+   * Recalcule l'ensemble : libellés par catégorie + récapitulatif sidebar.
    */
   function updateTotals() {
     var categories = document.querySelectorAll('.category');
+    var rows = [];
 
     categories.forEach(function (category) {
-      var countEl = category.querySelector('.category-heading .count');
-      if (!countEl) return;
-
-      var items = category.querySelectorAll('.ds-product-list-item-container');
-      var total = 0;
-      var found = false;
-
-      items.forEach(function (item) {
-        // Version desktop uniquement : exclure la version --mobile.
-        var priceEls = item.querySelectorAll(
-          '.ds-product-total-price.is-p1__bold'
-        );
-        priceEls.forEach(function (priceEl) {
-          if (priceEl.classList.contains('--mobile')) return;
-          var value = parsePrice(priceEl.textContent);
-          if (value !== null) {
-            total += value;
-            found = true;
-          }
-        });
-      });
-
-      if (!found) return;
-
+      var total = computeCategoryTotal(category);
+      if (total === null) return;
       var totalText = formatPrice(total);
-
-      if (countEl.getAttribute(PROCESSED_ATTR) === '1') {
-        // Mettre à jour le nœud total existant.
-        var existing = countEl.querySelector('.' + TOTAL_CLASS);
-        if (existing) {
-          if (existing.textContent !== totalText) {
-            existing.textContent = totalText;
-          }
-          return;
-        }
-      }
-
-      // Première fois (ou nœud disparu) : ajouter le total à côté du compteur.
-      var totalEl = document.createElement('strong');
-      totalEl.className = TOTAL_CLASS;
-      totalEl.textContent = totalText;
-
-      var separator = document.createTextNode(' — ');
-      separator.nodeValue = ' — ';
-
-      countEl.appendChild(separator);
-      countEl.appendChild(totalEl);
-      countEl.setAttribute(PROCESSED_ATTR, '1');
+      updateCountLabel(category, totalText);
+      rows.push({ title: getCategoryTitle(category), total: total });
     });
+
+    renderRecap(rows);
   }
 
   var debounceTimer = null;
@@ -105,10 +199,11 @@
   }
 
   /**
-   * Observe le conteneur du panier (ou le body en attendant son apparition)
-   * et relance le calcul à chaque mutation.
+   * Observe le DOM du panier et relance le calcul à chaque mutation.
    */
   function init() {
+    injectStyles();
+
     var observer = new MutationObserver(function () {
       scheduleUpdate();
     });
