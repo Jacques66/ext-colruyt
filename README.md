@@ -88,6 +88,12 @@ ext-colruyt/
 
 ---
 
+## 👤 Crédits
+
+Développé par **InZeMobile SRL**.
+
+---
+
 ## 📝 Licence
 
-[MIT](LICENSE) — utilisez, modifiez et partagez librement.
+[MIT](LICENSE) — © InZeMobile SRL. Utilisez, modifiez et partagez librement.
