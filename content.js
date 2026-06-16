@@ -273,9 +273,10 @@
         'transform:rotate(180deg);}',
       '.cg-hdr-panel{padding:8px 16px;font-size:0.85em;color:#1C3661;' +
         'background:#eef3fb;border-top:1px solid #dbe3ef;}',
-      '.cg-hdr-grid{display:inline-grid;grid-template-columns:auto auto;' +
+      '.cg-hdr-grid{display:inline-grid;grid-template-columns:auto auto auto;' +
         'gap:3px 16px;align-items:baseline;}',
       '.cg-hdr-full{grid-column:1 / -1;}',
+      '.cg-hdr-k{color:#63708a;}',
       '.cg-hdr-v{white-space:nowrap;}',
       '.cg-hdr-u{white-space:nowrap;color:#63708a;}',
       /* Bandeau « extension désactivée » (auto-test de structure). */
@@ -867,6 +868,7 @@
     }
     if (q.grams > 0) {
       rows.push({
+        label: t('qWeight'),
         value: '≈ ' + formatWeight(q.grams),
         unit: q.gramsPrice > 0
           ? formatPrice(q.gramsPrice / (q.grams / 1000)) + '/kg' : ''
@@ -874,6 +876,7 @@
     }
     if (q.ml > 0) {
       rows.push({
+        label: t('qVolume'),
         value: formatVolume(q.ml),
         unit: q.mlPrice > 0
           ? formatPrice(q.mlPrice / (q.ml / 1000)) + '/L' : ''
@@ -934,12 +937,16 @@
           f.textContent = r.full;
           grid.appendChild(f);
         } else {
+          var k = document.createElement('span');
+          k.className = 'cg-hdr-k';
+          k.textContent = r.label;
           var v = document.createElement('span');
           v.className = 'cg-hdr-v';
           v.textContent = r.value;
           var u = document.createElement('span');
           u.className = 'cg-hdr-u';
           u.textContent = r.unit;
+          grid.appendChild(k);
           grid.appendChild(v);
           grid.appendChild(u);
         }
