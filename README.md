@@ -27,7 +27,7 @@ catégorie — pour savoir, d'un coup d'œil, combien coûte chaque rayon.**
 |---|---|
 | 🧮 **Total par rayon (dans la liste)** | Pour chaque section, la somme des prix s'affiche **en gras** à côté du compteur — sur une seule ligne. |
 | 📋 **Récapitulatif (sidebar)** | Un bloc **« Total par rayon »** apparaît sous le **Total estimé**, avec le détail de chaque rayon. |
-| 🏷️ **Sous-totaux par marque** | Chaque rayon du récap est un **accordéon** : un clic sur le chevron dévoile le détail par marque (ex. BONI, DUYVIS, DORITOS…). |
+| 🏷️ **Sous-totaux par marque** | Chaque rayon du récap est un **accordéon** : un clic sur le chevron dévoile le détail par marque (ex. Boni, Duyvis, Doritos…). Une **pastille orange** repère les **marques propres** Colruyt (Boni, Everyday, Bio-Time…). |
 | ↕️ **Tri au choix** | Un menu déroulant trie le récap : montant décroissant, croissant, ou ordre de la liste. Le choix est mémorisé. |
 | 🔗 **Navigation en un clic** | Cliquer sur un rayon du récap fait défiler la page jusqu'à lui, qui clignote brièvement. |
 | 📌 **Colonne de droite figée** | La sidebar reste visible pendant le défilement (sticky, avec défilement interne si besoin). |

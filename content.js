@@ -36,7 +36,8 @@
       sortAsc: 'Montant croissant',
       sortPage: 'Ordre de la liste',
       noBrand: 'Sans marque',
-      toggleBrands: 'Afficher / masquer le détail par marque'
+      toggleBrands: 'Afficher / masquer le détail par marque',
+      ownBrand: 'Marque propre'
     },
     nl: {
       recapTitle: 'Totaal per afdeling',
@@ -44,9 +45,22 @@
       sortAsc: 'Bedrag oplopend',
       sortPage: 'Volgorde van de lijst',
       noBrand: 'Geen merk',
-      toggleBrands: 'Detail per merk tonen / verbergen'
+      toggleBrands: 'Detail per merk tonen / verbergen',
+      ownBrand: 'Eigen merk'
     }
   };
+
+  // Marques propres Colruyt (clés = token de tête en majuscules). Éditable.
+  var OWN_BRANDS = {
+    BONI: 1,        // Boni Selection, Boni Bio, Boni Plan'T…
+    EVERYDAY: 1,
+    'BIO-TIME': 1,
+    BIOTIME: 1
+  };
+
+  function isOwnBrand(brand) {
+    return !!OWN_BRANDS[brand];
+  }
 
   // Rayons dont l'accordéon (détail par marque) est déplié (mémorisé en session).
   var expandedBrands = {};
@@ -174,8 +188,12 @@
       /* Détail par marque (sous-totaux) : indenté, avec trait guide. */
       '.' + RECAP_CLASS + '__brands{margin:2px 0 6px 9px;padding-left:13px;' +
         'border-left:2px solid #e2e4ed;}',
-      '.' + RECAP_CLASS + '__brand{display:flex;justify-content:space-between;' +
-        'gap:12px;color:#63708a;font-size:0.82em;padding:1px 4px;}',
+      '.' + RECAP_CLASS + '__brand{display:flex;align-items:center;gap:6px;' +
+        'color:#63708a;font-size:0.82em;padding:1px 4px;}',
+      /* Pastille « marque propre » (slot réservé pour garder l\'alignement). */
+      '.' + RECAP_CLASS + '__brand-badge{flex:0 0 auto;width:7px;height:7px;' +
+        'border-radius:50%;background:transparent;}',
+      '.' + RECAP_CLASS + '__brand-badge.cg-own{background:#F5782D;}',
       '.' + RECAP_CLASS + '__brand-name{flex:1 1 auto;min-width:0;' +
         'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}',
       '.' + RECAP_CLASS + '__brand-value{flex:0 0 auto;white-space:nowrap;}',
@@ -408,12 +426,24 @@
       row.brands.forEach(function (b) {
         var line = document.createElement('div');
         line.className = RECAP_CLASS + '__brand';
+
+        var badge = document.createElement('span');
+        badge.className = RECAP_CLASS + '__brand-badge';
+        if (isOwnBrand(b.brand)) {
+          badge.className += ' cg-own';
+          badge.setAttribute('title', t('ownBrand'));
+          badge.setAttribute('aria-label', t('ownBrand'));
+        }
+
         var bn = document.createElement('span');
         bn.className = RECAP_CLASS + '__brand-name';
         bn.textContent = displayBrand(b.brand);
+
         var bv = document.createElement('span');
         bv.className = RECAP_CLASS + '__brand-value';
         bv.textContent = formatPrice(b.total);
+
+        line.appendChild(badge);
         line.appendChild(bn);
         line.appendChild(bv);
         panel.appendChild(line);
