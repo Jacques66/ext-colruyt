@@ -157,7 +157,7 @@ Et bien sûr, **conformément à la licence MIT**, Colruyt Group est libre de
 **réutiliser tout ou partie de ce code**, tel quel ou modifié. Nous demandons
 seulement à en être **informés**, afin d'adapter ce qui deviendrait obsolète
 dans le projet — voire de le retirer entièrement si l'idée est intégralement
-reprise.
+reprise (une collaboration est d'ailleurs toujours possible 😉).
 
 ---
 
