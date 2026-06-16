@@ -273,11 +273,11 @@
         'transform:rotate(180deg);}',
       '.cg-hdr-panel{padding:8px 16px;font-size:0.85em;color:#1C3661;' +
         'background:#eef3fb;border-top:1px solid #dbe3ef;}',
-      '.cg-hdr-grid{display:grid;grid-template-columns:auto 1fr auto;' +
-        'gap:3px 18px;align-items:baseline;}',
-      '.cg-hdr-k{color:#63708a;}',
-      '.cg-hdr-v{text-align:right;white-space:nowrap;}',
-      '.cg-hdr-u{text-align:right;white-space:nowrap;color:#63708a;}',
+      '.cg-hdr-grid{display:inline-grid;grid-template-columns:auto auto;' +
+        'gap:3px 16px;align-items:baseline;}',
+      '.cg-hdr-full{grid-column:1 / -1;}',
+      '.cg-hdr-v{white-space:nowrap;}',
+      '.cg-hdr-u{white-space:nowrap;color:#63708a;}',
       /* Bandeau « extension désactivée » (auto-test de structure). */
       '.cg-banner{display:flex;align-items:flex-start;gap:8px;font:inherit;' +
         'font-size:0.9em;line-height:1.35;box-sizing:border-box;}',
@@ -855,18 +855,18 @@
    * 2,21 €/kg • 12 L · 0,55 €/L »), ne gardant que les parties disponibles.
    */
   /**
-   * Lignes du panneau quantités : [{ label, value, unit }], une par métrique
-   * disponible (articles / poids / volume). Colonnes : libellé · quantité · €.
+   * Lignes du panneau quantités, une par métrique disponible :
+   *  - articles : un bloc « 11 articles » (pleine largeur) ;
+   *  - poids / volume : { value, unit } → colonnes quantité · prix alignées.
    */
   function buildQuantityRows(q) {
     if (!q) return [];
     var rows = [];
     if (q.units > 0) {
-      rows.push({ label: t('qArticles'), value: formatInt(q.units), unit: '' });
+      rows.push({ full: formatInt(q.units) + ' ' + t(q.units > 1 ? 'articles' : 'article') });
     }
     if (q.grams > 0) {
       rows.push({
-        label: t('qWeight'),
         value: '≈ ' + formatWeight(q.grams),
         unit: q.gramsPrice > 0
           ? formatPrice(q.gramsPrice / (q.grams / 1000)) + '/kg' : ''
@@ -874,7 +874,6 @@
     }
     if (q.ml > 0) {
       rows.push({
-        label: t('qVolume'),
         value: formatVolume(q.ml),
         unit: q.mlPrice > 0
           ? formatPrice(q.mlPrice / (q.ml / 1000)) + '/L' : ''
@@ -929,18 +928,21 @@
       var grid = document.createElement('div');
       grid.className = 'cg-hdr-grid';
       qrows.forEach(function (r) {
-        var k = document.createElement('span');
-        k.className = 'cg-hdr-k';
-        k.textContent = r.label;
-        var v = document.createElement('span');
-        v.className = 'cg-hdr-v';
-        v.textContent = r.value;
-        var u = document.createElement('span');
-        u.className = 'cg-hdr-u';
-        u.textContent = r.unit;
-        grid.appendChild(k);
-        grid.appendChild(v);
-        grid.appendChild(u);
+        if (r.full != null) {
+          var f = document.createElement('span');
+          f.className = 'cg-hdr-full';
+          f.textContent = r.full;
+          grid.appendChild(f);
+        } else {
+          var v = document.createElement('span');
+          v.className = 'cg-hdr-v';
+          v.textContent = r.value;
+          var u = document.createElement('span');
+          u.className = 'cg-hdr-u';
+          u.textContent = r.unit;
+          grid.appendChild(v);
+          grid.appendChild(u);
+        }
       });
       panel.appendChild(grid);
     }
