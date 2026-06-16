@@ -165,9 +165,9 @@ reprise (une collaboration est d'ailleurs toujours possible 😉).
 
 Ce projet est fourni **« tel quel » (_as-is_)**, sans aucune garantie.
 InZeMobile SRL **ne saurait être tenue responsable**, de quelque manière que ce
-soit, des conséquences de son utilisation — notamment d'éventuels
-dysfonctionnements liés aux **modifications futures de la page Collect&Go**,
-qui peut évoluer à tout moment.
+soit, des conséquences de son utilisation — notamment, mais pas seulement,
+d'éventuels dysfonctionnements liés aux **modifications futures de la page
+Collect&Go**, qui peut évoluer à tout moment.
 
 Nous **ne nous engageons pas** à maintenir ou à mettre à jour l'extension à
 l'avenir. Cela dit, comme nous l'utilisons nous-mêmes au quotidien, c'est un
