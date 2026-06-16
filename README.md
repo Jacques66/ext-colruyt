@@ -1,15 +1,23 @@
 <div align="center">
 
-# 🛒 Collect&Go — Totaux par rayon
+# 🛒 Totaux par rayon — pour Collect&Go
 
-**Extension Chrome qui enrichit la page panier de [Collect&Go](https://www.collectandgo.be/fr/chariot)
-avec les totaux par catégorie — pour savoir, d'un coup d'œil, combien coûte chaque rayon.**
+**Extension Chrome non officielle qui enrichit la page panier de
+[Collect&Go](https://www.collectandgo.be/fr/chariot) avec les totaux par
+catégorie — pour savoir, d'un coup d'œil, combien coûte chaque rayon.**
 
 [![Manifest](https://img.shields.io/badge/Manifest-V3-blue)](manifest.json)
 [![Langues](https://img.shields.io/badge/langues-FR%20%2F%20NL-success)](#-bilingue-fr--nl)
 [![Licence](https://img.shields.io/badge/licence-MIT-lightgrey)](#-licence)
 
 </div>
+
+> ⚠️ **Non affilié.** Cette extension est un projet indépendant, **non
+> officiel** et **sans aucune affiliation** avec Collect&Go ni Colruyt Group.
+> « Collect&Go » et « Colruyt » sont des marques de leurs titulaires respectifs,
+> citées ici uniquement à des fins descriptives (compatibilité). Aucun logo de
+> la marque n'est utilisé. L'extension agit côté navigateur, ne collecte ni ne
+> transmet aucune donnée, et n'interagit pas avec les serveurs de Collect&Go.
 
 ---
 
@@ -91,6 +99,8 @@ ext-colruyt/
 ## 👤 Crédits
 
 Développé par **InZeMobile SRL**.
+
+Projet indépendant, non affilié à Collect&Go ni à Colruyt Group.
 
 ---
 

@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Collect&Go - Totaux par catégorie",
+  "name": "Totaux par rayon — pour Collect&Go",
   "version": "1.0.0",
-  "description": "Affiche le total des prix par catégorie dans le chariot Collect&Go (à côté du compteur de produits).",
+  "description": "Affiche le total des prix par rayon dans le chariot Collect&Go. Extension non officielle, sans affiliation avec Collect&Go / Colruyt Group.",
   "icons": {
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
