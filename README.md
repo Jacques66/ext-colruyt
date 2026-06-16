@@ -41,14 +41,14 @@ catégorie — pour savoir, d'un coup d'œil, combien coûte chaque rayon.**
 
 | | |
 |---|---|
-| 🧮 **Totaux&nbsp;en&nbsp;liste** | Pour chaque section, la somme des prix s'affiche **en gras** à côté du compteur — sur une seule ligne. |
-| 📋 **Récap&nbsp;sidebar** | Un bloc **« Total par rayon »** apparaît sous le **Total estimé**, avec le détail de chaque rayon. |
-| 🏷️ **Détail&nbsp;par&nbsp;marque** | Chaque rayon du récap est un **accordéon** : un clic sur le chevron dévoile le détail par marque (ex. Boni, Duyvis, Doritos…). Une **pastille orange** repère les **marques propres** Colruyt (Boni, Everyday, Bio-Time…). |
-| ↕️ **Tri&nbsp;au&nbsp;choix** | Un menu déroulant trie le récap : montant décroissant, croissant, ou ordre de la liste. Le choix est mémorisé. |
-| 🔗 **Navigation&nbsp;rapide** | Cliquer sur un rayon du récap fait défiler la page jusqu'à lui, qui clignote brièvement. |
-| 📌 **Sidebar&nbsp;figée** | La colonne de droite reste visible pendant le défilement (sticky, avec défilement interne si besoin). |
-| 🗂️ **Sections&nbsp;repliées** | Les blocs **« Données pour le retrait »** (adresse + horaire) et **« Code promo »** sont repliés au démarrage — via l'accordéon **natif du site** — pour gagner de la place. Si l'adresse ou l'horaire manque, un **⚠️** s'affiche et le titre passe en **rouge** tant que le bloc est replié. |
-| 🔄 **Toujours&nbsp;à&nbsp;jour** | Les totaux se recalculent automatiquement à chaque changement de quantité (réactivité Vue.js). |
+| 🧮&nbsp;**Totaux&nbsp;en&nbsp;liste** | Pour chaque section, la somme des prix s'affiche **en gras** à côté du compteur — sur une seule ligne. |
+| 📋&nbsp;**Récap&nbsp;sidebar** | Un bloc **« Total par rayon »** apparaît sous le **Total estimé**, avec le détail de chaque rayon. |
+| 🏷️&nbsp;**Détail&nbsp;par&nbsp;marque** | Chaque rayon du récap est un **accordéon** : un clic sur le chevron dévoile le détail par marque (ex. Boni, Duyvis, Doritos…). Une **pastille orange** repère les **marques propres** Colruyt (Boni, Everyday, Bio-Time…). |
+| ↕️&nbsp;**Tri&nbsp;au&nbsp;choix** | Un menu déroulant trie le récap : montant décroissant, croissant, ou ordre de la liste. Le choix est mémorisé. |
+| 🔗&nbsp;**Navigation&nbsp;rapide** | Cliquer sur un rayon du récap fait défiler la page jusqu'à lui, qui clignote brièvement. |
+| 📌&nbsp;**Sidebar&nbsp;figée** | La colonne de droite reste visible pendant le défilement (sticky, avec défilement interne si besoin). |
+| 🗂️&nbsp;**Sections&nbsp;repliées** | Les blocs **« Données pour le retrait »** (adresse + horaire) et **« Code promo »** sont repliés au démarrage — via l'accordéon **natif du site** — pour gagner de la place. Si l'adresse ou l'horaire manque, un **⚠️** s'affiche et le titre passe en **rouge** tant que le bloc est replié. |
+| 🔄&nbsp;**Toujours&nbsp;à&nbsp;jour** | Les totaux se recalculent automatiquement à chaque changement de quantité (réactivité Vue.js). |
 
 > Exemple, dans l'en-tête d'un rayon :
 >
