@@ -21,6 +21,23 @@ catégorie — pour savoir, d'un coup d'œil, combien coûte chaque rayon.**
 
 ---
 
+## 📸 Aperçu
+
+<!--
+  Déposez les captures dans docs/screenshots/ (voir le README de ce dossier).
+  Tant que les fichiers ne sont pas présents, GitHub affiche le texte alternatif.
+-->
+
+<p align="center">
+  <img src="docs/screenshots/recap-sidebar.png" alt="Récap « Total par rayon » avec accordéons par marque et pastilles marque propre" width="420">
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/list-totals.png" alt="Totaux par rayon dans la grande liste, à côté du compteur de produits" width="720">
+</p>
+
+---
+
 ## ✨ Fonctionnalités
 
 | | |
