@@ -144,7 +144,11 @@
       /* Flash visuel sur le rayon ciblé. */
       '@keyframes cg-flash{0%{background-color:rgba(5,135,199,.25);}' +
         '100%{background-color:transparent;}}',
-      '.cg-flash{animation:cg-flash 1.2s ease-out;}'
+      '.cg-flash{animation:cg-flash 1.2s ease-out;}',
+      /* Garde la colonne de droite visible au scroll (avec défilement */
+      /* interne si elle dépasse la hauteur de l'écran). */
+      '.basket .sidebar{position:sticky;top:16px;align-self:flex-start;' +
+        'max-height:calc(100vh - 32px);overflow-y:auto;}'
     ].join('');
     (document.head || document.documentElement).appendChild(style);
   }
