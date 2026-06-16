@@ -120,7 +120,7 @@ ext-colruyt/
 
 ## 👤 Crédits
 
-Développé par **InZeMobile SRL**.
+Développé par **InZeMobile SRL** — [www.inzemobile.com](https://www.inzemobile.com).
 
 Projet indépendant, non affilié à Collect&Go ni à Colruyt Group.
 
