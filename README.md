@@ -106,9 +106,9 @@ l'attribut `<html lang>` :
   produits ; chaque produit est un `.ds-product-list-item-container`.
 - **Lien vers l'assortiment** : le nom du rayon est mis en correspondance (par
   libellé, insensible à la casse/aux accents) avec la page d'assortiment
-  (`rootCategoryId` stable). Le mapping est aujourd'hui renseigné en **FR** ;
-  si aucun rayon ne correspond (autre langue non renseignée, rayon temporaire…),
-  **aucun lien n'est posé** — rien n'est cassé.
+  (`rootCategoryId` stable), en **FR** comme en **NL**. Si aucun rayon ne
+  correspond (rayon temporaire, libellé inconnu…), **aucun lien n'est posé** —
+  rien n'est cassé.
 - **Recalcul** : un `MutationObserver` ciblé sur le wrapper Vue
   (`page-content`, avec repli sur `.basket` puis `body`) relance le calcul à
   chaque changement (quantité, suppression, promo…). La temporisation regroupe

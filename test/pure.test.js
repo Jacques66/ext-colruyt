@@ -95,9 +95,21 @@ test('assortmentHref : nom de rayon FR -> URL d\'assortiment', () => {
   );
 });
 
-test('assortmentHref : rayon inconnu ou langue non renseignée -> null', () => {
+test('assortmentHref : nom de rayon NL -> URL d\'assortiment', () => {
+  assert.strictEqual(
+    assortmentHref('Brik, conserven en bokalen', 'nl'),
+    'https://www.collectandgo.be/nl/assortiment/brik-conserven-bokalen?rootCategoryId=20013'
+  );
+  // « hygiëne » (tréma) doit matcher malgré la normalisation des accents.
+  assert.strictEqual(
+    assortmentHref('Verzorging, hygiëne en gezondheid', 'nl'),
+    'https://www.collectandgo.be/nl/assortiment/lichaamsverzorging-hygiene?rootCategoryId=20016'
+  );
+});
+
+test('assortmentHref : rayon inconnu -> null', () => {
   assert.strictEqual(assortmentHref('Rayon imaginaire', 'fr'), null);
   assert.strictEqual(assortmentHref('', 'fr'), null);
-  // Pas (encore) de libellés NL : aucune correspondance, donc pas de lien.
+  // Un libellé FR demandé en NL ne correspond pas (et inversement).
   assert.strictEqual(assortmentHref('Boîtes, conserves et bocaux', 'nl'), null);
 });
