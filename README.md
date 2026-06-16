@@ -136,6 +136,9 @@ qu'un seul objectif : améliorer le confort de l'utilisateur de son chariot.
 - **Respectueux de la page** — lecture du DOM déjà affiché, **aucun appel
   serveur**, **aucune donnée** collectée ni transmise ; les composants
   existants ne sont pas altérés.
+- **Fidèle au design** — nous avons veillé à **ne pas trahir le _look & feel_**
+  de la page Collect&Go (couleurs, typographie, composants natifs), par respect
+  pour le travail de leurs équipes ; nos ajouts s'y intègrent discrètement.
 - **Auditable** — code source ouvert, facile à relire pour une équipe sécurité.
 
 > Ce respect de l'utilisateur et des sites tiers — confidentialité absolue,
