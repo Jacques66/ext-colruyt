@@ -87,12 +87,77 @@
     return { grams: null, ml: null };
   }
 
+  /**
+   * Normalise un nom de rayon pour la comparaison : minuscules, sans accents,
+   * ponctuation/espaces réduits à un seul espace. Permet de faire correspondre
+   * le libellé du chariot au libellé de la page d'assortiment malgré les
+   * différences de casse, d'accents ou de ponctuation.
+   */
+  function normalizeCategoryKey(name) {
+    if (!name) return '';
+    var s = String(name).toLowerCase();
+    if (typeof s.normalize === 'function') {
+      s = s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    }
+    return s.replace(/[^a-z0-9]+/g, ' ').trim();
+  }
+
+  // Rayons de tête de l'assortiment Collect&Go : id stable (rootCategoryId) +
+  // libellé/slug par langue. Sert à transformer le nom du rayon (en-tête du
+  // chariot) en lien vers la page d'assortiment correspondante.
+  // NB : seuls les libellés FR sont renseignés (la page NL n'a pas pu être
+  // récupérée). Une entrée NL { name, slug } peut être ajoutée par rayon ;
+  // sans correspondance, aucun lien n'est posé (dégradation silencieuse).
+  var ASSORTMENT_BASE = 'https://www.collectandgo.be/';
+  var CATEGORY_LINKS = [
+    { id: '20001', fr: { name: 'Fruits, légumes, pommes de terres et noix', slug: 'fruits-legumes' } },
+    { id: '20002', fr: { name: 'Viande, charcuterie, poisson et veggie', slug: 'viande-charcuterie-poisson-veggie' } },
+    { id: '20003', fr: { name: 'Plats cuisinés et préparations fraîches', slug: 'plats-prepares-frais-salades-wraps' } },
+    { id: '20005', fr: { name: 'Crèmerie et alternatives végétales', slug: 'cremerie-alternatives-vegetales' } },
+    { id: '20014', fr: { name: 'Surgelés', slug: 'surgeles' } },
+    { id: '72024', fr: { name: 'Eau, boissons gazeuses, jus de fruits et boissons chaudes', slug: 'eau-boissons-gazeuses-jus-de-fruits-boissons-chaudes' } },
+    { id: '72025', fr: { name: 'Vin et bulles, bière, apéritifs et spiritueux, boissons non alcoolisées', slug: 'vins-bulles-bieres-aperitifs-spritueux' } },
+    { id: '20007', fr: { name: 'Pain, céréales, farines et produits pour pâtisserie', slug: 'pain-cereales-farines-patisserie' } },
+    { id: '20008', fr: { name: 'Tartinades et garnitures', slug: 'tartinades-garniture' } },
+    { id: '20009', fr: { name: 'Chips, snacks et bouchées apéritives', slug: 'chips-snacks-bouchees' } },
+    { id: '20010', fr: { name: 'Biscuits, chocolats, en-cas energétiques et confiserie', slug: 'biscuits-chocolats-en-cas-energetiques-confiserie' } },
+    { id: '20011', fr: { name: 'Épices, sucre, huile et sauces', slug: 'epices-sucre-huile-sauces' } },
+    { id: '20012', fr: { name: 'Pâtes, riz, graines et cuisine du monde', slug: 'pates-riz-graines-cuisine-du-monde' } },
+    { id: '20013', fr: { name: 'Boîtes, conserves et bocaux', slug: 'boites-conserves-bocaux' } },
+    { id: '20015', fr: { name: 'Bébé', slug: 'bebe' } },
+    { id: '20016', fr: { name: 'Soins, hygiène et santé', slug: 'soin-pour-le-corps-hygiene-personnelle' } },
+    { id: '20017', fr: { name: 'Entretien et ménage', slug: 'entretien-menage' } },
+    { id: '20018', fr: { name: 'Animaux', slug: 'animaux' } },
+    { id: '20019', fr: { name: 'Dans et autour de la maison', slug: 'dans-autour-de-la-maison' } }
+  ];
+
+  /**
+   * URL d'assortiment correspondant à un nom de rayon, pour la langue donnée
+   * ('fr' / 'nl'). Retourne null si le rayon n'est pas connu dans cette langue.
+   */
+  function assortmentHref(categoryName, lang) {
+    var l = (lang === 'nl') ? 'nl' : 'fr';
+    var key = normalizeCategoryKey(categoryName);
+    if (!key) return null;
+    for (var i = 0; i < CATEGORY_LINKS.length; i++) {
+      var info = CATEGORY_LINKS[i][l];
+      if (!info) continue;
+      if (normalizeCategoryKey(info.name) === key) {
+        return ASSORTMENT_BASE + l + '/assortiment/' + info.slug +
+          '?rootCategoryId=' + CATEGORY_LINKS[i].id;
+      }
+    }
+    return null;
+  }
+
   var api = {
     parsePrice: parsePrice,
     formatPrice: formatPrice,
     extractBrand: extractBrand,
     displayBrand: displayBrand,
-    parseQuantityFromName: parseQuantityFromName
+    parseQuantityFromName: parseQuantityFromName,
+    normalizeCategoryKey: normalizeCategoryKey,
+    assortmentHref: assortmentHref
   };
 
   // Node (tests) : export CommonJS.

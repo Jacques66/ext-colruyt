@@ -47,6 +47,7 @@ catégorie — pour savoir, d'un coup d'œil, combien coûte chaque rayon.**
 | 📦&nbsp;**Quantités&nbsp;par&nbsp;rayon** | Un clic sur un **en-tête de rayon** (à gauche) déplie un panneau discret : **nombre réel d'articles** (sachets/pièces) et, selon les produits, le **poids** (≈ kg, €/kg) et le **volume** (L, €/L). Poids/volume déduits du prix au kg/L (repli heuristique sur le libellé) → affiché en « ≈ ». |
 | ↕️&nbsp;**Tri&nbsp;au&nbsp;choix** | Un menu déroulant trie le récap : montant décroissant, croissant, ou ordre de la liste. Le choix est mémorisé. |
 | 🔗&nbsp;**Navigation&nbsp;rapide** | Cliquer sur un rayon du récap fait défiler la page jusqu'à lui, qui clignote brièvement. |
+| 🛍️&nbsp;**Rayon&nbsp;en&nbsp;un&nbsp;clic** | Le **nom du rayon** dans l'en-tête de gauche devient un **lien** : un clic ouvre la **page d'assortiment** correspondante dans un **nouvel onglet** (pratique pour compléter ses courses). |
 | 📌&nbsp;**Sidebar&nbsp;figée** | La colonne de droite reste visible pendant le défilement (sticky, avec défilement interne si besoin). |
 | 🗂️&nbsp;**Sections&nbsp;repliées** | Les blocs **« Données pour le retrait »** (adresse + horaire) et **« Code promo »** sont repliés au démarrage — via l'accordéon **natif du site** — pour gagner de la place. Si l'adresse ou l'horaire manque, un **⚠️** s'affiche et le titre passe en **rouge** tant que le bloc est replié. |
 | 🔄&nbsp;**Toujours&nbsp;à&nbsp;jour** | Les totaux se recalculent automatiquement à chaque changement de quantité (réactivité Vue.js). |
@@ -103,6 +104,11 @@ l'attribut `<html lang>` :
   **chaque rayon** (par cohérence, même mono-marque).
 - **Sections** : `.category` → en-tête `.header.background-blue` + liste de
   produits ; chaque produit est un `.ds-product-list-item-container`.
+- **Lien vers l'assortiment** : le nom du rayon est mis en correspondance (par
+  libellé, insensible à la casse/aux accents) avec la page d'assortiment
+  (`rootCategoryId` stable). Le mapping est aujourd'hui renseigné en **FR** ;
+  si aucun rayon ne correspond (autre langue non renseignée, rayon temporaire…),
+  **aucun lien n'est posé** — rien n'est cassé.
 - **Recalcul** : un `MutationObserver` ciblé sur le wrapper Vue
   (`page-content`, avec repli sur `.basket` puis `body`) relance le calcul à
   chaque changement (quantité, suppression, promo…). La temporisation regroupe

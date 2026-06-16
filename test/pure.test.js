@@ -3,7 +3,8 @@
 const test = require('node:test');
 const assert = require('node:assert');
 const {
-  parsePrice, formatPrice, extractBrand, displayBrand, parseQuantityFromName
+  parsePrice, formatPrice, extractBrand, displayBrand, parseQuantityFromName,
+  normalizeCategoryKey, assortmentHref
 } = require('../pure.js');
 
 const NBSP = '\u00A0';
@@ -69,4 +70,34 @@ test('parseQuantityFromName : pièces (ignoré) / vide', () => {
   assert.deepStrictEqual(parseQuantityFromName('EVERYDAY bouillon poule 12pc'), { grams: null, ml: null });
   assert.deepStrictEqual(parseQuantityFromName('PAPILLON oranges'), { grams: null, ml: null });
   assert.deepStrictEqual(parseQuantityFromName(''), { grams: null, ml: null });
+});
+
+test('normalizeCategoryKey : casse, accents, ponctuation', () => {
+  assert.strictEqual(
+    normalizeCategoryKey('Épices, sucre, huile et sauces'),
+    'epices sucre huile et sauces'
+  );
+  assert.strictEqual(normalizeCategoryKey('Bébé'), 'bebe');
+  assert.strictEqual(normalizeCategoryKey('  Animaux  '), 'animaux');
+  assert.strictEqual(normalizeCategoryKey(''), '');
+  assert.strictEqual(normalizeCategoryKey(null), '');
+});
+
+test('assortmentHref : nom de rayon FR -> URL d\'assortiment', () => {
+  assert.strictEqual(
+    assortmentHref('Boîtes, conserves et bocaux', 'fr'),
+    'https://www.collectandgo.be/fr/assortiment/boites-conserves-bocaux?rootCategoryId=20013'
+  );
+  // Tolérant à la casse / aux accents / aux espaces.
+  assert.strictEqual(
+    assortmentHref('  epices, SUCRE, huile et sauces ', 'fr'),
+    'https://www.collectandgo.be/fr/assortiment/epices-sucre-huile-sauces?rootCategoryId=20011'
+  );
+});
+
+test('assortmentHref : rayon inconnu ou langue non renseignée -> null', () => {
+  assert.strictEqual(assortmentHref('Rayon imaginaire', 'fr'), null);
+  assert.strictEqual(assortmentHref('', 'fr'), null);
+  // Pas (encore) de libellés NL : aucune correspondance, donc pas de lien.
+  assert.strictEqual(assortmentHref('Boîtes, conserves et bocaux', 'nl'), null);
 });

@@ -20,6 +20,7 @@
   var PROCESSED_ATTR = 'data-cg-total-processed';
   var TOTAL_CLASS = 'cg-category-total';
   var RECAP_CLASS = 'cg-category-recap';
+  var CAT_LINK_CLASS = 'cg-cat-link';
   var STYLE_ID = 'cg-category-total-styles';
   var DEBOUNCE_MS = 250;
   // Délai maximal : garantit un recalcul même si la page mute en continu
@@ -53,7 +54,8 @@
       articles: 'articles',
       qArticles: 'Articles',
       qWeight: 'Poids',
-      qVolume: 'Volume'
+      qVolume: 'Volume',
+      openCategory: 'Ouvrir ce rayon dans un nouvel onglet'
     },
     nl: {
       recapTitle: 'Totaal per afdeling',
@@ -70,7 +72,8 @@
       articles: 'artikelen',
       qArticles: 'Artikelen',
       qWeight: 'Gewicht',
-      qVolume: 'Volume'
+      qVolume: 'Volume',
+      openCategory: 'Deze afdeling in een nieuw tabblad openen'
     }
   };
 
@@ -180,6 +183,7 @@
   var extractBrand = CGPure.extractBrand;
   var displayBrand = CGPure.displayBrand;
   var parseQuantityFromName = CGPure.parseQuantityFromName;
+  var assortmentHref = CGPure.assortmentHref;
 
   /**
    * Injecte une seule fois la feuille de style de l'extension.
@@ -271,6 +275,9 @@
         'color:currentColor;transition:transform .12s ease;}',
       '.header.background-blue[aria-expanded="true"] .cg-hdr-chevron{' +
         'transform:rotate(180deg);}',
+      /* Lien vers la page d'assortiment, posé sur le nom du rayon. */
+      '.cg-cat-link{color:inherit;text-decoration:none;cursor:pointer;}',
+      '.cg-cat-link:hover,.cg-cat-link:focus{text-decoration:underline;}',
       '.cg-hdr-panel{padding:8px 16px;font-size:0.85em;color:#1C3661;' +
         'background:#eef3fb;border-top:1px solid #dbe3ef;text-align:right;}',
       '.cg-hdr-grid{display:inline-grid;grid-template-columns:auto auto auto;' +
@@ -907,6 +914,42 @@
   }
 
   /**
+   * Pose (idempotent) un lien vers la page d'assortiment sur le nom du rayon,
+   * dans l'en-tête bleu de gauche. Le clic ouvre un nouvel onglet et n'altère
+   * pas l'accordéon « quantités » (stopPropagation). Aucun lien n'est posé si
+   * le rayon est inconnu (autre langue non renseignée, rayon temporaire…), de
+   * sorte que rien n'est cassé en l'absence de correspondance.
+   */
+  function ensureCategoryLink(category) {
+    var header = category.querySelector('.header.background-blue');
+    var titleEl = header ? header.querySelector('.title') : null;
+    if (!titleEl) return;
+    var name = (titleEl.textContent || '').trim();
+    if (!name) return;
+    var href = assortmentHref(name, detectLang());
+    if (!href) return; // rayon inconnu : on ne touche à rien
+
+    var link = titleEl.querySelector('a.' + CAT_LINK_CLASS);
+    if (link) {
+      if (link.getAttribute('href') !== href) link.setAttribute('href', href);
+      return;
+    }
+    // Première pose : envelopper le texte du titre dans un lien. Le titre ne
+    // contient que ce texte (le compteur « X produits » est un nœud à part),
+    // donc `headerTitleOf` continue de renvoyer le même libellé.
+    titleEl.textContent = '';
+    link = document.createElement('a');
+    link.className = CAT_LINK_CLASS;
+    link.setAttribute('href', href);
+    link.setAttribute('target', '_blank');
+    link.setAttribute('rel', 'noopener noreferrer');
+    link.setAttribute('title', t('openCategory'));
+    link.textContent = name;
+    link.addEventListener('click', function (e) { e.stopPropagation(); });
+    titleEl.appendChild(link);
+  }
+
+  /**
    * (Re)pose l'accordéon « quantités » sur l'en-tête d'un rayon et met à jour
    * son panneau. Idempotent. N'altère pas le contenu existant de l'en-tête.
    */
@@ -965,7 +1008,7 @@
       chevron.className = 'cg-hdr-chevron';
       chevron.setAttribute('aria-hidden', 'true');
       // Chevron natif du site (même tracé que ses menus déroulants d'en-tête).
-      chevron.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" ' +
+      chevron.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" ' +
         'fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 10L12 14L16 10" ' +
         'stroke="currentColor" stroke-width="1.5" stroke-linecap="round" ' +
         'stroke-linejoin="round"></path></svg>';
@@ -1107,6 +1150,7 @@
       var info = computeCategory(category);
       if (info === null) return;
       updateCountLabel(category, formatPrice(info.total));
+      ensureCategoryLink(category);
       ensureHeaderAccordion(category, info.quantities);
       // Le tri s'applique aussi aux marques au sein de chaque rayon.
       applySort(info.brands);
