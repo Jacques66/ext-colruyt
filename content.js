@@ -147,9 +147,17 @@
       '.' + RECAP_CLASS + '__header{display:flex;align-items:center;' +
         'justify-content:space-between;gap:8px;margin-bottom:6px;}',
       '.' + RECAP_CLASS + '__title{font-weight:700;color:#1C3661;}',
-      '.' + RECAP_CLASS + '__sort{font:inherit;font-size:0.85em;color:#1C3661;' +
-        'background:#fff;border:1px solid #d9dde6;border-radius:4px;' +
-        'padding:2px 4px;cursor:pointer;max-width:55%;}',
+      '.' + RECAP_CLASS + '__sort{-webkit-appearance:none;-moz-appearance:none;' +
+        'appearance:none;font:inherit;font-size:0.85em;color:#1C3661;' +
+        'background-color:#fff;background-repeat:no-repeat;' +
+        'background-position:right 7px center;background-size:11px;' +
+        'background-image:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%2712%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%231C3661%27 stroke-width=%272.2%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpath d=%27M6 9l6 6 6-6%27/%3E%3C/svg%3E");' +
+        'border:1px solid #cbd2e0;border-radius:6px;' +
+        'padding:4px 24px 4px 9px;cursor:pointer;max-width:60%;' +
+        'transition:border-color .12s ease,box-shadow .12s ease;}',
+      '.' + RECAP_CLASS + '__sort:hover{border-color:#0055A2;}',
+      '.' + RECAP_CLASS + '__sort:focus{outline:none;border-color:#0055A2;' +
+        'box-shadow:0 0 0 3px rgba(0,85,162,.15);}',
       '.' + RECAP_CLASS + '__row{display:flex;justify-content:space-between;' +
         'align-items:baseline;gap:12px;color:#1C3661;padding:3px 4px;' +
         'font-size:0.95em;cursor:pointer;border-radius:4px;' +
