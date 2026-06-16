@@ -73,11 +73,17 @@ l'attribut `<html lang>` :
 
 ## 🚀 Installation (mode développeur)
 
-1. Cloner ou télécharger ce dépôt.
+1. Télécharger **[`dist/ext-colruyt.zip`](dist/ext-colruyt.zip)** (généré
+   automatiquement à chaque mise à jour du code) et le **décompresser**.
+   *(Alternative : cloner le dépôt et utiliser le dossier directement.)*
 2. Ouvrir `chrome://extensions`.
 3. Activer le **Mode développeur** (en haut à droite).
-4. Cliquer sur **« Charger l'extension non empaquetée »** et sélectionner ce dossier.
+4. Cliquer sur **« Charger l'extension non empaquetée »** et sélectionner le
+   dossier décompressé (celui qui contient `manifest.json`).
 5. Ouvrir le [chariot Collect&Go](https://www.collectandgo.be/fr/chariot) — les totaux apparaissent. ✅
+
+> Le zip est reconstruit par un workflow GitHub Actions dès qu'une dépendance
+> d'exécution change (`manifest.json`, `pure.js`, `content.js`, `icons/`).
 
 ---
 
@@ -122,9 +128,12 @@ ext-colruyt/
 ├── manifest.json     # Manifest V3 (content scripts, URLs ciblées)
 ├── pure.js           # Fonctions pures testables (parsePrice, formatPrice, …)
 ├── content.js        # Logique DOM : calculs, récap, tri, scroll, accordéons, styles
-├── test/             # Tests unitaires (node:test) des fonctions pures
-├── package.json      # « npm test »
 ├── icons/            # Icônes 16 / 48 / 128 px
+├── dist/             # ext-colruyt.zip (généré, prêt à installer)
+├── scripts/          # build-zip.sh (« npm run build »)
+├── test/             # Tests unitaires (node:test) des fonctions pures
+├── .github/          # Workflow de build du zip
+├── package.json      # « npm test » · « npm run build »
 └── README.md
 ```
 

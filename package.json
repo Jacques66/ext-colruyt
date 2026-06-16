@@ -4,7 +4,8 @@
   "description": "Totaux par rayon — pour Collect&Go (extension non officielle).",
   "private": true,
   "scripts": {
-    "test": "node --test"
+    "test": "node --test",
+    "build": "bash scripts/build-zip.sh"
   },
   "license": "MIT",
   "author": "InZeMobile SRL (https://www.inzemobile.com)"
