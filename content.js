@@ -210,6 +210,11 @@
       /* Accordéons « repliés par défaut » (retrait + code promo). */
       '.cg-acc .header.collapsible{display:none !important;}',
       '.cg-acc.cg-collapsed .collapsible-content{display:none !important;}',
+      /* Ouvert : on neutralise le repli propre du site (max-height/height/ */
+      /* overflow gérés par Vue) pour révéler le contenu (adresse, etc.). */
+      '.cg-acc:not(.cg-collapsed) .collapsible-content{display:block !important;' +
+        'max-height:none !important;height:auto !important;overflow:visible !important;' +
+        'visibility:visible !important;opacity:1 !important;}',
       '.cg-acc-header{display:flex;align-items:center;gap:8px;cursor:pointer;' +
         'padding:12px 0;-webkit-user-select:none;user-select:none;}',
       '.cg-acc-header__chevron{flex:0 0 auto;color:#1C3661;font-size:0.8em;' +
