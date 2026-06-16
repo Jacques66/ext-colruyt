@@ -138,6 +138,10 @@ qu'un seul objectif : améliorer le confort de l'utilisateur de son chariot.
   existants ne sont pas altérés.
 - **Auditable** — code source ouvert, facile à relire pour une équipe sécurité.
 
+> Ce respect de l'utilisateur et des sites tiers — confidentialité absolue,
+> non-intrusion, transparence — est le **fondement éthique d'InZeMobile SRL**,
+> appliqué à **tous** ses produits, qu'ils soient libres ou commerciaux.
+
 Nous portons le plus grand respect à Collect&Go et à Colruyt Group. **À la
 demande des titulaires de droits, nous adapterons ou retirerons volontiers**
 tout élément concerné — il suffit d'ouvrir une *issue* sur ce dépôt ou de
