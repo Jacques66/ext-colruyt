@@ -110,10 +110,25 @@ l'attribut `<html lang>` :
 
 ```
 ext-colruyt/
-├── manifest.json     # Manifest V3 (content script, URLs ciblées)
-├── content.js        # Toute la logique : calculs, récap, tri, scroll, styles
+├── manifest.json     # Manifest V3 (content scripts, URLs ciblées)
+├── pure.js           # Fonctions pures testables (parsePrice, formatPrice, …)
+├── content.js        # Logique DOM : calculs, récap, tri, scroll, accordéons, styles
+├── test/             # Tests unitaires (node:test) des fonctions pures
+├── package.json      # « npm test »
 ├── icons/            # Icônes 16 / 48 / 128 px
 └── README.md
+```
+
+---
+
+## 🧪 Tests
+
+Les fonctions pures (sans DOM) — analyse/format des prix, détection de marque —
+sont isolées dans `pure.js` et couvertes par des tests unitaires, **sans aucune
+dépendance** (`node:test`, intégré à Node) :
+
+```bash
+npm test
 ```
 
 ---

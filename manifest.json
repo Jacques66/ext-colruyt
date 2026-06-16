@@ -14,7 +14,7 @@
         "*://www.collectandgo.be/*/chariot",
         "*://www.collectandgo.be/*/winkelwagen"
       ],
-      "js": ["content.js"],
+      "js": ["pure.js", "content.js"],
       "run_at": "document_idle"
     }
   ]
