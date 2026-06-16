@@ -126,6 +126,25 @@ Projet indépendant, non affilié à Collect&Go ni à Colruyt Group.
 
 ---
 
+## 🤝 Bonne foi & respect de la marque
+
+Ce projet est né d'une **appréciation sincère du service Collect&Go** et n'a
+qu'un seul objectif : améliorer le confort de l'utilisateur de son chariot.
+
+- **Indépendant et non officiel** — aucune affiliation avec Collect&Go ni
+  Colruyt Group, aucun logo de la marque utilisé.
+- **Respectueux de la page** — lecture du DOM déjà affiché, **aucun appel
+  serveur**, **aucune donnée** collectée ni transmise ; les composants
+  existants ne sont pas altérés.
+- **Auditable** — code source ouvert, facile à relire pour une équipe sécurité.
+
+Nous portons le plus grand respect à Collect&Go et à Colruyt Group. **À la
+demande des titulaires de droits, nous adapterons ou retirerons volontiers**
+tout élément concerné — il suffit d'ouvrir une *issue* sur ce dépôt ou de
+contacter InZeMobile SRL.
+
+---
+
 ## 📝 Licence
 
 [MIT](LICENSE) — © InZeMobile SRL. Utilisez, modifiez et partagez librement.
