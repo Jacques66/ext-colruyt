@@ -126,6 +126,15 @@
   }
 
   /**
+   * Affiche une marque en casse de titre (BONI -> Boni) pour atténuer l'effet
+   * « tout en majuscules ». Le regroupement reste basé sur la forme majuscule.
+   */
+  function displayBrand(brand) {
+    if (!brand) return brand;
+    return brand.charAt(0).toUpperCase() + brand.slice(1).toLowerCase();
+  }
+
+  /**
    * Injecte une seule fois la feuille de style de l'extension.
    */
   function injectStyles() {
@@ -162,12 +171,13 @@
         'cursor:pointer;transition:transform .12s ease;}',
       '.' + RECAP_CLASS + '__toggle[aria-expanded="true"]{transform:rotate(90deg);}',
       '.' + RECAP_CLASS + '__spacer{flex:0 0 auto;width:14px;}',
-      /* Détail par marque (sous-totaux). */
-      '.' + RECAP_CLASS + '__brands{margin:0 0 4px 18px;}',
+      /* Détail par marque (sous-totaux) : indenté, avec trait guide. */
+      '.' + RECAP_CLASS + '__brands{margin:2px 0 6px 9px;padding-left:13px;' +
+        'border-left:2px solid #e2e4ed;}',
       '.' + RECAP_CLASS + '__brand{display:flex;justify-content:space-between;' +
-        'gap:12px;color:#48526d;font-size:0.85em;padding:1px 4px;}',
-      '.' + RECAP_CLASS + '__brand-name{overflow:hidden;text-overflow:ellipsis;' +
-        'white-space:nowrap;}',
+        'gap:12px;color:#63708a;font-size:0.82em;padding:1px 4px;}',
+      '.' + RECAP_CLASS + '__brand-name{flex:1 1 auto;min-width:0;' +
+        'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}',
       '.' + RECAP_CLASS + '__brand-value{flex:0 0 auto;white-space:nowrap;}',
       /* Décalage pour ne pas masquer le rayon sous l'en-tête au scroll. */
       '.category{scroll-margin-top:100px;}',
@@ -399,7 +409,7 @@
         line.className = RECAP_CLASS + '__brand';
         var bn = document.createElement('span');
         bn.className = RECAP_CLASS + '__brand-name';
-        bn.textContent = b.brand;
+        bn.textContent = displayBrand(b.brand);
         var bv = document.createElement('span');
         bv.className = RECAP_CLASS + '__brand-value';
         bv.textContent = formatPrice(b.total);
