@@ -49,6 +49,7 @@ catégorie — pour savoir, d'un coup d'œil, combien coûte chaque rayon.**
 | 📌&nbsp;**Sidebar&nbsp;figée** | La colonne de droite reste visible pendant le défilement (sticky, avec défilement interne si besoin). |
 | 🗂️&nbsp;**Sections&nbsp;repliées** | Les blocs **« Données pour le retrait »** (adresse + horaire) et **« Code promo »** sont repliés au démarrage — via l'accordéon **natif du site** — pour gagner de la place. Si l'adresse ou l'horaire manque, un **⚠️** s'affiche et le titre passe en **rouge** tant que le bloc est replié. |
 | 🔄&nbsp;**Toujours&nbsp;à&nbsp;jour** | Les totaux se recalculent automatiquement à chaque changement de quantité (réactivité Vue.js). |
+| 🛡️&nbsp;**Sûr&nbsp;si&nbsp;la&nbsp;page&nbsp;change** | Au chargement, l'extension vérifie la structure attendue. Si la page Collect&Go a évolué, elle **se désactive** et affiche un **bandeau** (à la place du détail dans la sidebar, ou en **rouge tout en haut** si l'ancrage a disparu) — jamais de totaux erronés. |
 
 > Exemple, dans l'en-tête d'un rayon :
 >
@@ -102,6 +103,12 @@ l'attribut `<html lang>` :
 - **Idempotence** : les compteurs `.count` traités sont marqués
   (`data-cg-total-processed`) ; la valeur est mise à jour en place plutôt que de
   rajouter un nœud. Les libellés sont écrits via `textContent` (pas d'injection HTML).
+- **Auto-test de structure** : au chargement, l'extension vérifie que la page
+  expose toujours ce dont elle a besoin (sections, compteur, prix lisible). En
+  cas de changement, elle **se désactive** et affiche un bandeau (sidebar, ou
+  rouge en haut si l'ancrage a disparu) plutôt que de risquer des totaux faux.
+  La détection patiente quelques cycles pour éviter les faux positifs pendant
+  le rendu de la SPA.
 - **Non intrusif** : l'extension n'altère aucune fonctionnalité existante de la page.
 
 ---

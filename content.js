@@ -26,6 +26,14 @@
   // (chat, Tealium, timers…) et repousserait sinon indéfiniment le debounce.
   var MAX_WAIT_MS = 800;
 
+  // Auto-test de structure : si la page Collect&Go a changé, on désactive les
+  // fonctionnalités et on affiche un bandeau. On patiente quelques cycles avant
+  // de conclure (anti-faux-positif pendant le rendu de la SPA).
+  var BANNER_ID = 'cg-disabled-banner';
+  var STRUCTURE_FAIL_LIMIT = 4;
+  var featuresDisabled = false;
+  var structureFailStreak = 0;
+
   var SORT_KEY = 'cgSortMode';
 
   // Libellés traduits (le site existe en FR et NL).
@@ -38,7 +46,9 @@
       noBrand: 'Sans marque',
       toggleBrands: 'Afficher / masquer le détail par marque',
       ownBrand: 'Marque propre',
-      handoverMissing: 'Adresse ou plage horaire manquante'
+      handoverMissing: 'Adresse ou plage horaire manquante',
+      disabledMsg: 'Extension « Totaux par rayon » désactivée : la structure de ' +
+        'la page Collect&Go a changé. L\'extension doit être mise à jour.'
     },
     nl: {
       recapTitle: 'Totaal per afdeling',
@@ -48,7 +58,9 @@
       noBrand: 'Geen merk',
       toggleBrands: 'Detail per merk tonen / verbergen',
       ownBrand: 'Eigen merk',
-      handoverMissing: 'Adres of tijdslot ontbreekt'
+      handoverMissing: 'Adres of tijdslot ontbreekt',
+      disabledMsg: 'Extensie « Totaal per afdeling » uitgeschakeld: de structuur ' +
+        'van de Collect&Go-pagina is gewijzigd. De extensie moet worden bijgewerkt.'
     }
   };
 
@@ -238,7 +250,18 @@
         'max-height:calc(100vh - 32px);overflow-y:auto;}',
       /* Alerte sur l'en-tête « Données pour le retrait » du site. */
       '.cg-acc-warn{color:#CB0000 !important;}',
-      '.cg-warn-badge{margin-left:6px;}'
+      '.cg-warn-badge{margin-left:6px;}',
+      /* Bandeau « extension désactivée » (auto-test de structure). */
+      '.cg-banner{display:flex;align-items:flex-start;gap:8px;font:inherit;' +
+        'font-size:0.9em;line-height:1.35;box-sizing:border-box;}',
+      '.cg-banner__icon{flex:0 0 auto;}',
+      '.cg-banner--sidebar{margin-top:12px;padding:10px 12px;' +
+        'background:#fdecec;border:1px solid #f3c2c2;color:#b3261e;' +
+        'border-radius:8px;}',
+      '.cg-banner--top{position:fixed;top:0;left:0;right:0;' +
+        'z-index:2147483647;padding:10px 16px;background:#CB0000;color:#fff;' +
+        'justify-content:center;text-align:left;' +
+        'box-shadow:0 2px 8px rgba(0,0,0,.25);}'
     ].join('');
     (document.head || document.documentElement).appendChild(style);
   }
@@ -707,10 +730,113 @@
     });
   }
 
+  /* ------------------------------------------------------------------ *
+   * Auto-test de structure : vérifie que la page expose toujours ce dont *
+   * l'extension a besoin ; sinon, désactive et affiche un bandeau.       *
+   * ------------------------------------------------------------------ */
+
+  /**
+   * Le premier prix « desktop » trouvé est-il lisible (format intact) ?
+   */
+  function firstDesktopPriceReadable(scope) {
+    var els = scope.querySelectorAll('.ds-product-total-price.is-p1__bold');
+    for (var i = 0; i < els.length; i++) {
+      if (els[i].classList.contains('--mobile')) continue;
+      return parsePrice(els[i].textContent) !== null;
+    }
+    return false;
+  }
+
+  /**
+   * Construit un bandeau d'alerte (sidebar ou pleine largeur en haut).
+   */
+  function buildBanner(isTop, message) {
+    var div = document.createElement('div');
+    div.id = BANNER_ID;
+    div.className = 'cg-banner ' + (isTop ? 'cg-banner--top' : 'cg-banner--sidebar');
+    div.setAttribute('role', 'alert');
+    var icon = document.createElement('span');
+    icon.className = 'cg-banner__icon';
+    icon.textContent = '⚠️';
+    var text = document.createElement('span');
+    text.textContent = message;
+    div.appendChild(icon);
+    div.appendChild(text);
+    return div;
+  }
+
+  /**
+   * Affiche (une seule fois) le bandeau « désactivée » : à la place du détail
+   * ajouté (dans la sidebar) si possible, sinon en rouge tout en haut de la page.
+   */
+  function ensureDisabledBanner() {
+    if (document.getElementById(BANNER_ID)) return;
+
+    // Retire notre récap éventuel (on n'affiche plus de détail potentiellement faux).
+    var recap = document.querySelector('.' + RECAP_CLASS);
+    if (recap && recap.parentNode) recap.parentNode.removeChild(recap);
+
+    var message = t('disabledMsg');
+    var anchor = document.querySelector('.sidebar .order-totals') ||
+      document.querySelector('.sidebar');
+    if (anchor) {
+      anchor.appendChild(buildBanner(false, message));
+    } else {
+      // Plus aucun ancrage : bandeau rouge tout en haut de la page.
+      document.body.insertBefore(buildBanner(true, message), document.body.firstChild);
+    }
+  }
+
+  /**
+   * Vérifie la structure attendue. Retourne true si l'extension peut opérer.
+   * Ne conclut à un changement de structure que si des produits sont présents
+   * mais que les éléments attendus manquent (anti-faux-positif au chargement).
+   */
+  function verifyStructure() {
+    if (featuresDisabled) {
+      ensureDisabledBanner();
+      return false;
+    }
+
+    var basket = document.querySelector('.simple-basket');
+    if (!basket) {
+      // Panier pas encore rendu (ou vide via une autre vue) : on patiente.
+      structureFailStreak = 0;
+      return false;
+    }
+
+    var items = basket.querySelectorAll('.ds-product-list-item-container');
+    if (items.length === 0) {
+      // Panier sans produits : rien à faire, ce n'est pas une erreur.
+      structureFailStreak = 0;
+      return false;
+    }
+
+    // Des produits existent : on doit retrouver sections, compteur et prix lisible.
+    var ok = !!basket.querySelector('.category') &&
+      !!basket.querySelector('.category-heading .count') &&
+      firstDesktopPriceReadable(basket);
+
+    if (ok) {
+      structureFailStreak = 0;
+      return true;
+    }
+
+    // Échec : on attend quelques cycles avant de désactiver (anti-transitoire).
+    structureFailStreak++;
+    if (structureFailStreak >= STRUCTURE_FAIL_LIMIT) {
+      featuresDisabled = true;
+      ensureDisabledBanner();
+    }
+    return false;
+  }
+
   /**
    * Recalcule l'ensemble : libellés par catégorie + récapitulatif sidebar.
    */
   function updateTotals() {
+    if (!verifyStructure()) return;
+
     var categories = document.querySelectorAll('.category');
     var rows = [];
 
