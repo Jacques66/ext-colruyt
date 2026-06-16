@@ -20,6 +20,33 @@
   var STYLE_ID = 'cg-category-total-styles';
   var DEBOUNCE_MS = 300;
 
+  // Libellés traduits (le site existe en FR et NL).
+  var LABELS = {
+    fr: { recapTitle: 'Total par rayon' },
+    nl: { recapTitle: 'Totaal per afdeling' }
+  };
+
+  /**
+   * Détecte la langue de la page (fr par défaut).
+   * S'appuie sur l'URL (/nl/…/winkelwagen vs /fr/…/chariot) puis sur <html lang>.
+   */
+  function detectLang() {
+    var path = location.pathname.toLowerCase();
+    if (path.indexOf('/nl/') !== -1 || path.indexOf('winkelwagen') !== -1) {
+      return 'nl';
+    }
+    if (path.indexOf('/fr/') !== -1 || path.indexOf('chariot') !== -1) {
+      return 'fr';
+    }
+    var htmlLang = (document.documentElement.getAttribute('lang') || '').toLowerCase();
+    return htmlLang.indexOf('nl') === 0 ? 'nl' : 'fr';
+  }
+
+  function t(key) {
+    var lang = detectLang();
+    return (LABELS[lang] && LABELS[lang][key]) || LABELS.fr[key];
+  }
+
   /**
    * Convertit un prix au format européen ("5,98 €" / "1 234,56 €") en nombre.
    * Retourne null si aucun nombre n'est trouvé.
@@ -145,7 +172,7 @@
       orderTotals.appendChild(recap);
     }
 
-    var parts = ['<div class="' + RECAP_CLASS + '__title">Total par rayon</div>'];
+    var parts = ['<div class="' + RECAP_CLASS + '__title"></div>'];
     rows.forEach(function (row) {
       parts.push(
         '<div class="' + RECAP_CLASS + '__row">' +
@@ -159,6 +186,13 @@
     if (recap.getAttribute('data-cg-rows') !== String(rows.length)) {
       recap.innerHTML = newHtml;
       recap.setAttribute('data-cg-rows', String(rows.length));
+    }
+
+    // Titre (traduit, rempli via textContent).
+    var titleEl = recap.querySelector('.' + RECAP_CLASS + '__title');
+    var titleText = t('recapTitle');
+    if (titleEl && titleEl.textContent !== titleText) {
+      titleEl.textContent = titleText;
     }
 
     // Remplir le texte (textContent => pas d'injection HTML).

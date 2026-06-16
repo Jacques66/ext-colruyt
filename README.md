@@ -31,6 +31,11 @@ Les totaux sont recalculés automatiquement à chaque modification du panier
   `data-cg-total-processed` : la valeur est mise à jour plutôt que de rajouter
   un nouveau nœud à chaque recalcul.
 
+- **Bilingue** : le site existe en FR et NL ; le libellé du récapitulatif
+  s'adapte automatiquement (« Total par rayon » / « Totaal per afdeling »),
+  d'après l'URL (`/fr/chariot` vs `/nl/winkelwagen`) puis l'attribut
+  `<html lang>`.
+
 L'extension n'interfère pas avec les fonctionnalités existantes de la page.
 
 ## Installation (mode développeur)
