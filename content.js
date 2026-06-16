@@ -37,7 +37,8 @@
       sortPage: 'Ordre de la liste',
       noBrand: 'Sans marque',
       toggleBrands: 'Afficher / masquer le détail par marque',
-      ownBrand: 'Marque propre'
+      ownBrand: 'Marque propre',
+      handoverMissing: 'Adresse ou plage horaire manquante'
     },
     nl: {
       recapTitle: 'Totaal per afdeling',
@@ -46,7 +47,8 @@
       sortPage: 'Volgorde van de lijst',
       noBrand: 'Geen merk',
       toggleBrands: 'Detail per merk tonen / verbergen',
-      ownBrand: 'Eigen merk'
+      ownBrand: 'Eigen merk',
+      handoverMissing: 'Adres of tijdslot ontbreekt'
     }
   };
 
@@ -65,8 +67,8 @@
   // Rayons dont l'accordéon (détail par marque) est déplié (mémorisé en session).
   var expandedBrands = {};
 
-  // État des accordéons de la sidebar (retrait / code promo). Repliés par défaut.
-  var accCollapsed = { handover: true, promo: true };
+  // Repli initial (une fois) des accordéons natifs de la sidebar.
+  var accAutoCollapsed = { handover: false, promo: false };
 
   // Mode de tri courant du récap (mémorisé entre les recalculs / rechargements).
   var sortMode = loadSortMode();
@@ -207,22 +209,9 @@
       /* interne si elle dépasse la hauteur de l'écran). */
       '.basket .sidebar{position:sticky;top:16px;align-self:flex-start;' +
         'max-height:calc(100vh - 32px);overflow-y:auto;}',
-      /* Accordéons « repliés par défaut » (retrait + code promo). */
-      '.cg-acc .header.collapsible{display:none !important;}',
-      '.cg-acc.cg-collapsed .collapsible-content{display:none !important;}',
-      /* Ouvert : on neutralise le repli propre du site (max-height/height/ */
-      /* overflow gérés par Vue) pour révéler le contenu (adresse, etc.). */
-      '.cg-acc:not(.cg-collapsed) .collapsible-content{display:block !important;' +
-        'max-height:none !important;height:auto !important;overflow:visible !important;' +
-        'visibility:visible !important;opacity:1 !important;}',
-      '.cg-acc-header{display:flex;align-items:center;gap:8px;cursor:pointer;' +
-        'padding:12px 0;-webkit-user-select:none;user-select:none;}',
-      '.cg-acc-header__chevron{flex:0 0 auto;color:#1C3661;font-size:0.8em;' +
-        'line-height:1;transition:transform .12s ease;}',
-      '.cg-acc:not(.cg-collapsed) .cg-acc-header__chevron{transform:rotate(90deg);}',
-      '.cg-acc-header__title{flex:1 1 auto;font-weight:700;color:#1C3661;}',
-      '.cg-acc-header__title.cg-warn{color:#CB0000;}',
-      '.cg-acc-header__warn{flex:0 0 auto;}'
+      /* Alerte sur l'en-tête « Données pour le retrait » du site. */
+      '.cg-acc-warn{color:#CB0000 !important;}',
+      '.cg-warn-badge{margin-left:6px;}'
     ].join('');
     (document.head || document.documentElement).appendChild(style);
   }
@@ -554,15 +543,10 @@
   }
 
   /* ------------------------------------------------------------------ *
-   * Accordéons de la sidebar (retrait + code promo), repliés par défaut. *
-   * On remplace l'en-tête du site par le nôtre pour piloter l'état nous- *
-   * mêmes (sans désynchroniser le chevron de Vue), de façon idempotente. *
+   * Sidebar : on replie une fois (au démarrage) les blocs « retrait » et *
+   * « code promo » via le mécanisme natif du site, et on ajoute ⚠️ + rouge *
+   * sur l'en-tête « Données pour le retrait » si adresse/horaire manquent. *
    * ------------------------------------------------------------------ */
-
-  function getAccTitle(headerEl) {
-    var el = headerEl.querySelector('.handover-info-title, .promo-code-title');
-    return el ? el.textContent.trim() : '';
-  }
 
   function isTimeslotMissing(wrapper) {
     return !!wrapper.querySelector('.no-slot-text');
@@ -573,89 +557,67 @@
     return !a || !a.textContent.trim();
   }
 
-  function applyCollapsed(wrapper, collapsed) {
-    if (collapsed) wrapper.classList.add('cg-collapsed');
-    else wrapper.classList.remove('cg-collapsed');
-  }
-
   /**
-   * Met à jour le ⚠️ et le titre rouge (rouge uniquement quand replié).
+   * Le bloc collapsible du site est-il ouvert (contenu visible) ?
    */
-  function updateAccWarning(wrapper, myHeader, isHandover, collapsed) {
-    var warnEl = myHeader.querySelector('.cg-acc-header__warn');
-    var titleEl = myHeader.querySelector('.cg-acc-header__title');
-    var missing = isHandover &&
-      (isAddressMissing(wrapper) || isTimeslotMissing(wrapper));
-    if (warnEl) warnEl.hidden = !missing;
-    if (titleEl) {
-      if (missing && collapsed) titleEl.classList.add('cg-warn');
-      else titleEl.classList.remove('cg-warn');
-    }
-  }
-
-  function buildAccHeader(titleText, id, wrapper, isHandover) {
-    var h = document.createElement('div');
-    h.className = 'cg-acc-header';
-
-    var chevron = document.createElement('span');
-    chevron.className = 'cg-acc-header__chevron';
-    chevron.textContent = '▸';
-
-    var title = document.createElement('span');
-    title.className = 'cg-acc-header__title';
-    title.textContent = titleText;
-
-    var warn = document.createElement('span');
-    warn.className = 'cg-acc-header__warn';
-    warn.textContent = '⚠️';
-    warn.hidden = true;
-
-    h.appendChild(chevron);
-    h.appendChild(title);
-    h.appendChild(warn);
-
-    h.addEventListener('click', function () {
-      accCollapsed[id] = !accCollapsed[id];
-      applyCollapsed(wrapper, accCollapsed[id]);
-      updateAccWarning(wrapper, h, isHandover, accCollapsed[id]);
-    });
-
-    return h;
+  function isCollapsibleOpen(wrapper) {
+    var c = wrapper.querySelector('.collapsible-content');
+    return !!(c && c.offsetHeight > 0);
   }
 
   /**
-   * (Re)pose nos en-têtes d'accordéon sur les blocs « retrait » et
-   * « code promo » de la sidebar. Idempotent : ré-applicable à chaque recalcul.
+   * Ajoute ⚠️ et passe le titre en rouge (rouge uniquement quand replié)
+   * sur l'en-tête « Données pour le retrait » du site.
+   */
+  function updateHandoverWarning(headerEl, wrapper) {
+    var titleEl = headerEl.querySelector('.handover-info-title');
+    if (!titleEl) return;
+    var container = headerEl.querySelector('.title-and-chevron') || headerEl;
+
+    var missing = isAddressMissing(wrapper) || isTimeslotMissing(wrapper);
+    var warn = container.querySelector('.cg-warn-badge');
+    if (missing && !warn) {
+      warn = document.createElement('span');
+      warn.className = 'cg-warn-badge';
+      warn.textContent = '⚠️';
+      warn.setAttribute('title', t('handoverMissing'));
+      warn.setAttribute('aria-label', t('handoverMissing'));
+      var chevron = container.querySelector('.header-chevron');
+      if (chevron) container.insertBefore(warn, chevron);
+      else container.appendChild(warn);
+    } else if (warn) {
+      warn.hidden = !missing;
+    }
+
+    // Rouge quand le bloc est replié (et qu'il manque quelque chose).
+    var collapsed = !isCollapsibleOpen(wrapper);
+    if (missing && collapsed) titleEl.classList.add('cg-acc-warn');
+    else titleEl.classList.remove('cg-acc-warn');
+  }
+
+  /**
+   * Replie une fois (au démarrage) les accordéons du site et entretient
+   * l'alerte du bloc « retrait ». Idempotent : ré-appelable à chaque recalcul.
    */
   function ensureSidebarAccordions() {
     var headers = document.querySelectorAll('.sidebar .header.collapsible');
     headers.forEach(function (headerEl) {
       var wrapper = headerEl.parentElement;
-      if (!wrapper) return;
-      if (!wrapper.querySelector('.collapsible-content')) return;
+      if (!wrapper || !wrapper.querySelector('.collapsible-content')) return;
 
       var isHandover = !!headerEl.querySelector('.handover-info-title');
       var isPromo = !!headerEl.querySelector('.promo-code-title');
       if (!isHandover && !isPromo) return;
       var id = isHandover ? 'handover' : 'promo';
 
-      wrapper.classList.add('cg-acc');
-      applyCollapsed(wrapper, accCollapsed[id]);
-
-      var myHeader = wrapper.querySelector('.cg-acc-header');
-      if (!myHeader) {
-        myHeader = buildAccHeader(getAccTitle(headerEl), id, wrapper, isHandover);
-        wrapper.insertBefore(myHeader, wrapper.firstChild);
-      } else {
-        // Garde le titre synchrone (langue / changement de libellé).
-        var titleEl = myHeader.querySelector('.cg-acc-header__title');
-        var titleText = getAccTitle(headerEl);
-        if (titleEl && titleText && titleEl.textContent !== titleText) {
-          titleEl.textContent = titleText;
-        }
+      // Replier une seule fois, avec le mécanisme du site (chevron + contenu
+      // restent cohérents). L'utilisateur reste libre de rouvrir ensuite.
+      if (!accAutoCollapsed[id]) {
+        if (isCollapsibleOpen(wrapper)) headerEl.click();
+        accAutoCollapsed[id] = true;
       }
 
-      updateAccWarning(wrapper, myHeader, isHandover, accCollapsed[id]);
+      if (isHandover) updateHandoverWarning(headerEl, wrapper);
     });
   }
 
