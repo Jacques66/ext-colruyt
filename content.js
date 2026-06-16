@@ -261,10 +261,10 @@
       '.cg-warn-badge{margin-left:6px;}',
       /* Accordéon « quantités » sur les en-têtes de rayon (à gauche). */
       '.header.background-blue.cg-hdr{cursor:pointer;}',
-      '.cg-hdr-chevron{display:inline-block;margin-left:8px;font-size:0.8em;' +
-        'line-height:1;color:currentColor;transition:transform .12s ease;}',
+      '.cg-hdr-chevron{display:inline-flex;align-items:center;margin-left:8px;' +
+        'color:currentColor;transition:transform .12s ease;}',
       '.header.background-blue[aria-expanded="true"] .cg-hdr-chevron{' +
-        'transform:rotate(90deg);}',
+        'transform:rotate(180deg);}',
       '.cg-hdr-panel{padding:6px 16px;font-size:0.85em;color:#48526d;' +
         'background:#eef3fb;border-top:1px solid #dbe3ef;}',
       /* Bandeau « extension désactivée » (auto-test de structure). */
@@ -907,8 +907,12 @@
     if (!chevron) {
       chevron = document.createElement('span');
       chevron.className = 'cg-hdr-chevron';
-      chevron.textContent = '▸';
       chevron.setAttribute('aria-hidden', 'true');
+      // Chevron natif du site (même tracé que ses menus déroulants d'en-tête).
+      chevron.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" ' +
+        'fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 10L12 14L16 10" ' +
+        'stroke="currentColor" stroke-width="1.5" stroke-linecap="round" ' +
+        'stroke-linejoin="round"></path></svg>';
       tac.appendChild(chevron);
     }
 
