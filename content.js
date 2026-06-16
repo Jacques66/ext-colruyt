@@ -349,7 +349,9 @@
    * d'une marque, le panneau accordéon des sous-totaux par marque.
    */
   function buildRecapItem(row) {
-    var hasBrands = row.brands && row.brands.length > 1;
+    // Accordéon disponible pour tout rayon ayant au moins une marque
+    // (donc tous) — par cohérence, même les rayons mono-marque.
+    var hasBrands = row.brands && row.brands.length > 0;
     var expanded = hasBrands && expandedBrands[row.title] === true;
 
     var item = document.createElement('div');

@@ -73,8 +73,8 @@ l'attribut `<html lang>` :
   (`5,98 €`, virgule décimale).
 - **Marques** : déduites du libellé produit (`.ds-product-tag`) — le **token en
   majuscules en tête** sert de marque (ex. « BONI ananas… » → `BONI`) ; à défaut,
-  les produits sont regroupés sous « Sans marque ». L'accordéon n'apparaît que
-  pour les rayons comptant **au moins deux marques**.
+  les produits sont regroupés sous « Sans marque ». L'accordéon est proposé pour
+  **chaque rayon** (par cohérence, même mono-marque).
 - **Sections** : `.category` → en-tête `.header.background-blue` + liste de
   produits ; chaque produit est un `.ds-product-list-item-container`.
 - **Recalcul** : un `MutationObserver` ciblé sur le wrapper Vue
