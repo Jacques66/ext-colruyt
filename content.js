@@ -70,16 +70,16 @@
   }
 
   /**
-   * Trie (en place) les lignes du récap selon le mode courant.
-   * 'page' conserve l'ordre du DOM (ordre de la grande liste).
+   * Trie (en place) une liste d'objets ayant une propriété `total`, selon le
+   * mode courant. 'page' conserve l'ordre d'origine (DOM / apparition).
    */
-  function applySort(rows) {
+  function applySort(list) {
     if (sortMode === 'desc') {
-      rows.sort(function (a, b) { return b.total - a.total; });
+      list.sort(function (a, b) { return b.total - a.total; });
     } else if (sortMode === 'asc') {
-      rows.sort(function (a, b) { return a.total - b.total; });
+      list.sort(function (a, b) { return a.total - b.total; });
     }
-    return rows;
+    return list;
   }
 
   /**
@@ -261,10 +261,11 @@
 
     if (!found) return null;
 
+    // Ordre d'apparition (Object.keys conserve l'ordre d'insertion) ; le tri
+    // effectif est appliqué ensuite selon le mode choisi.
     var brands = Object.keys(brandMap).map(function (b) {
       return { brand: b, total: brandMap[b] };
     });
-    brands.sort(function (a, b) { return b.total - a.total; });
 
     return { total: total, brands: brands };
   }
@@ -634,6 +635,8 @@
       var info = computeCategory(category);
       if (info === null) return;
       updateCountLabel(category, formatPrice(info.total));
+      // Le tri s'applique aussi aux marques au sein de chaque rayon.
+      applySort(info.brands);
       rows.push({
         title: getCategoryTitle(category),
         total: info.total,
