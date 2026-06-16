@@ -153,6 +153,12 @@ demande des titulaires de droits, nous adapterons ou retirerons volontiers**
 tout élément concerné — il suffit d'ouvrir une *issue* sur ce dépôt ou de
 contacter InZeMobile SRL.
 
+Et bien sûr, **conformément à la licence MIT**, Colruyt Group est libre de
+**réutiliser tout ou partie de ce code**, tel quel ou modifié. Nous demandons
+seulement à en être **informés**, afin d'adapter ce qui deviendrait obsolète
+dans le projet — voire de le retirer entièrement si l'idée est intégralement
+reprise.
+
 ---
 
 ## 📝 Licence
