@@ -136,12 +136,12 @@ qu'un seul objectif : améliorer le confort de l'utilisateur de son chariot.
 - **Respectueux de la page** — lecture du DOM déjà affiché, **aucun appel
   serveur**, **aucune donnée** collectée ni transmise ; les composants
   existants ne sont pas altérés.
-- **Fidèle au design, sans ralentir la page** — nous avons veillé à **ne pas
-  trahir le _look & feel_** de Collect&Go (couleurs, typographie, composants
-  natifs), par respect pour le travail de leurs équipes, et à **ne pas
-  ralentir la page** (calculs regroupés, observation ciblée du seul panier,
-  reconstruction du DOM uniquement quand les données changent vraiment). Nos
-  ajouts s'intègrent discrètement.
+- **Fidèle au design** — nous avons veillé à **ne pas trahir le _look & feel_**
+  de la page Collect&Go (couleurs, typographie, composants natifs), par respect
+  pour le travail de leurs équipes ; nos ajouts s'y intègrent discrètement.
+- **Léger** — nous avons veillé à **ne pas ralentir la page** : calculs
+  regroupés (debounce), observation ciblée du seul panier, et reconstruction
+  du DOM uniquement lorsque les données changent réellement.
 - **Auditable** — code source ouvert, facile à relire pour une équipe sécurité.
 
 > Ce respect de l'utilisateur et des sites tiers — confidentialité absolue,
