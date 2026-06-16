@@ -73,8 +73,8 @@ l'attribut `<html lang>` :
 
 ## 🚀 Installation (mode développeur)
 
-1. Télécharger **[`dist/ext-colruyt.zip`](dist/ext-colruyt.zip)** (généré
-   automatiquement à chaque mise à jour du code) et le **décompresser**.
+1. Télécharger **[`dist/ext-colruyt.zip`](dist/ext-colruyt.zip)** (maintenu à
+   jour à chaque changement de code) et le **décompresser**.
    *(Alternative : cloner le dépôt et utiliser le dossier directement.)*
 2. Ouvrir `chrome://extensions`.
 3. Activer le **Mode développeur** (en haut à droite).
@@ -82,8 +82,10 @@ l'attribut `<html lang>` :
    dossier décompressé (celui qui contient `manifest.json`).
 5. Ouvrir le [chariot Collect&Go](https://www.collectandgo.be/fr/chariot) — les totaux apparaissent. ✅
 
-> Le zip est reconstruit par un workflow GitHub Actions dès qu'une dépendance
-> d'exécution change (`manifest.json`, `pure.js`, `content.js`, `icons/`).
+> Le zip est régénéré localement (`npm run build`) à chaque changement de code.
+> Un workflow GitHub Actions **vérifie** qu'il est bien à jour à chaque push
+> touchant une dépendance d'exécution (`manifest.json`, `pure.js`, `content.js`,
+> `icons/`) — il échoue sinon, mais ne committe rien.
 
 ---
 
@@ -132,7 +134,7 @@ ext-colruyt/
 ├── dist/             # ext-colruyt.zip (généré, prêt à installer)
 ├── scripts/          # build-zip.sh (« npm run build »)
 ├── test/             # Tests unitaires (node:test) des fonctions pures
-├── .github/          # Workflow de build du zip
+├── .github/          # Workflow de vérification du zip
 ├── package.json      # « npm test » · « npm run build »
 └── README.md
 ```

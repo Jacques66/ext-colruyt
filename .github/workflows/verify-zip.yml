@@ -1,0 +1,54 @@
+name: Verify extension zip
+
+# Vérifie que dist/ext-colruyt.zip est à jour quand une dépendance d'exécution
+# change (un changement de README, docs ou tests ne déclenche donc rien).
+# Ne committe rien : échoue simplement si le zip n'a pas été régénéré.
+on:
+  push:
+    paths:
+      - 'manifest.json'
+      - 'pure.js'
+      - 'content.js'
+      - 'icons/**'
+      - 'scripts/build-zip.sh'
+      - 'dist/ext-colruyt.zip'
+      - '.github/workflows/verify-zip.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Le zip correspond-il aux sources ?
+        run: |
+          set -euo pipefail
+          tmp="$(mktemp -d)"
+          unzip -q dist/ext-colruyt.zip -d "$tmp"
+
+          # Liste attendue (sources) vs liste embarquée (zip).
+          { printf '%s\n' manifest.json pure.js content.js; find icons -type f; } \
+            | sort > /tmp/insrc
+          ( cd "$tmp" && find . -type f | sed 's|^\./||' ) | sort > /tmp/inzip
+
+          fail=0
+          if ! diff -u /tmp/insrc /tmp/inzip; then
+            echo "::error::Le contenu du zip ne correspond pas à la liste des sources."
+            fail=1
+          fi
+
+          while IFS= read -r f; do
+            if ! cmp -s "$f" "$tmp/$f"; then
+              echo "::error::$f diffère (ou est absent) dans dist/ext-colruyt.zip."
+              fail=1
+            fi
+          done < /tmp/insrc
+
+          if [ "$fail" -ne 0 ]; then
+            echo "Lance « npm run build » et committe dist/ext-colruyt.zip."
+            exit 1
+          fi
+          echo "dist/ext-colruyt.zip est à jour ✅"
