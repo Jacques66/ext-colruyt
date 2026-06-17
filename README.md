@@ -43,6 +43,7 @@ catégorie — pour savoir, d'un coup d'œil, combien coûte chaque rayon.**
 |---|---|
 | 🧮&nbsp;**Totaux&nbsp;en&nbsp;liste** | Pour chaque section, la somme des prix s'affiche **en gras** à côté du compteur — sur une seule ligne. |
 | 📋&nbsp;**Récap&nbsp;sidebar** | Un bloc **« Total par rayon »** apparaît sous le **Total estimé**, avec le détail de chaque rayon. |
+| 🧺&nbsp;**Quantités&nbsp;totales** | En bas du récap, un **accordéon** additionne **tout le panier** : nombre d'articles, **poids total** (≈ kg, €/kg moyen) et **volume total** (L, €/L moyen). |
 | 🏷️&nbsp;**Détail&nbsp;par&nbsp;marque** | Chaque rayon du récap est un **accordéon** : un clic sur le chevron dévoile le détail par marque (ex. Boni, Duyvis, Doritos…). Une **pastille orange** repère les **marques propres** Colruyt (Boni, Everyday, Bio-Time…). |
 | 📦&nbsp;**Quantités&nbsp;par&nbsp;rayon** | Un clic sur un **en-tête de rayon** (à gauche) déplie un panneau discret : **nombre réel d'articles** (sachets/pièces) et, selon les produits, le **poids** (≈ kg, €/kg) et le **volume** (L, €/L). Poids/volume déduits du prix au kg/L (repli heuristique sur le libellé) → affiché en « ≈ ». |
 | ↕️&nbsp;**Tri&nbsp;au&nbsp;choix** | Un menu déroulant trie le récap : montant décroissant, croissant, ou ordre de la liste. Le choix est mémorisé. |

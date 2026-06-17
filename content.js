@@ -21,6 +21,7 @@
   var TOTAL_CLASS = 'cg-category-total';
   var RECAP_CLASS = 'cg-category-recap';
   var CAT_LINK_CLASS = 'cg-cat-link';
+  var QTOTAL_CLASS = 'cg-qtotal';
   var STYLE_ID = 'cg-category-total-styles';
   var DEBOUNCE_MS = 250;
   // Délai maximal : garantit un recalcul même si la page mute en continu
@@ -55,7 +56,9 @@
       qArticles: 'Articles',
       qWeight: 'Poids',
       qVolume: 'Volume',
-      openCategory: 'Ouvrir ce rayon dans un nouvel onglet'
+      openCategory: 'Ouvrir ce rayon dans un nouvel onglet',
+      qTotalTitle: 'Quantités totales',
+      qTotalToggle: 'Afficher / masquer les quantités totales'
     },
     nl: {
       recapTitle: 'Totaal per afdeling',
@@ -73,7 +76,9 @@
       qArticles: 'Artikelen',
       qWeight: 'Gewicht',
       qVolume: 'Volume',
-      openCategory: 'Deze afdeling in een nieuw tabblad openen'
+      openCategory: 'Deze afdeling in een nieuw tabblad openen',
+      qTotalTitle: 'Totale hoeveelheden',
+      qTotalToggle: 'Totale hoeveelheden tonen / verbergen'
     }
   };
 
@@ -94,6 +99,9 @@
 
   // En-têtes de gauche dont l'accordéon « quantités » est déplié.
   var expandedHeaders = {};
+
+  // État (déplié/replié) de l'accordéon « quantités totales » de la sidebar.
+  var qTotalOpen = false;
 
   // Repli initial (une fois) des accordéons natifs de la sidebar.
   var accAutoCollapsed = { handover: false, promo: false };
@@ -256,6 +264,24 @@
       '.' + RECAP_CLASS + '__brand-name{flex:1 1 auto;min-width:0;' +
         'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}',
       '.' + RECAP_CLASS + '__brand-value{flex:0 0 auto;white-space:nowrap;}',
+      /* Accordéon « quantités totales » (en bas du récap). */
+      '.' + QTOTAL_CLASS + '{margin-top:8px;padding-top:8px;' +
+        'border-top:1px solid #e2e4ed;}',
+      '.' + QTOTAL_CLASS + '__row{display:flex;align-items:baseline;gap:8px;' +
+        'color:#1C3661;padding:3px 4px;font-size:0.95em;cursor:pointer;' +
+        'border-radius:4px;transition:background-color .12s ease;}',
+      '.' + QTOTAL_CLASS + '__row:hover{background-color:#eef3fb;}',
+      '.' + QTOTAL_CLASS + '__toggle{flex:0 0 auto;width:14px;padding:0;' +
+        'border:0;background:none;color:#1C3661;font-size:0.8em;line-height:1;' +
+        'cursor:pointer;transform:scale(1.5);transform-origin:center;' +
+        'transition:transform .12s ease;}',
+      '.' + QTOTAL_CLASS + '__row[aria-expanded="true"] .' + QTOTAL_CLASS +
+        '__toggle{transform:scale(1.5) rotate(90deg);}',
+      '.' + QTOTAL_CLASS + '__title{flex:1 1 auto;font-weight:700;}',
+      '.' + QTOTAL_CLASS + '__value{flex:0 0 auto;font-weight:600;' +
+        'white-space:nowrap;}',
+      '.' + QTOTAL_CLASS + '__panel{margin:2px 0 2px 9px;padding-left:13px;' +
+        'border-left:2px solid #e2e4ed;font-size:0.85em;color:#1C3661;}',
       /* Décalage pour ne pas masquer le rayon sous l'en-tête au scroll. */
       '.category{scroll-margin-top:100px;}',
       /* Flash visuel sur le rayon ciblé. */
@@ -467,7 +493,7 @@
    * Construit / met à jour le récapitulatif « Total par rayon » dans la sidebar,
    * juste après le bloc « Total estimé ».
    */
-  function renderRecap(rows) {
+  function renderRecap(rows, grandQ) {
     // Ancrage : le bloc des totaux de la sidebar (Produits, Réductions, …).
     var orderTotals = document.querySelector('.sidebar .order-totals');
     if (!orderTotals) return;
@@ -479,6 +505,10 @@
     if (titleEl && titleEl.textContent !== t('recapTitle')) {
       titleEl.textContent = t('recapTitle');
     }
+
+    // Accordéon « quantités totales » (indépendant du tri/du contenu de la
+    // liste : mis à jour à chaque passage, même quand la liste ne change pas).
+    ensureQuantityTotal(recap, grandQ);
 
     // On ne reconstruit la liste que si les données ont réellement changé
     // (sinon le survol clignoterait, la page mutant en continu). L'état déplié
@@ -895,6 +925,145 @@
     return rows;
   }
 
+  /**
+   * Construit la grille « articles / poids / volume » à partir des lignes de
+   * `buildQuantityRows`. Partagée par l'accordéon de gauche (en-tête de rayon)
+   * et l'accordéon « quantités totales » de la sidebar.
+   */
+  function buildQuantityGrid(rows) {
+    var grid = document.createElement('div');
+    grid.className = 'cg-hdr-grid';
+    rows.forEach(function (r) {
+      if (r.full != null) {
+        var f = document.createElement('span');
+        f.className = 'cg-hdr-full';
+        f.textContent = r.full;
+        grid.appendChild(f);
+      } else {
+        var k = document.createElement('span');
+        k.className = 'cg-hdr-k';
+        k.textContent = r.label;
+        var v = document.createElement('span');
+        v.className = 'cg-hdr-v';
+        v.textContent = r.value;
+        var u = document.createElement('span');
+        u.className = 'cg-hdr-u';
+        u.textContent = r.unit;
+        grid.appendChild(k);
+        grid.appendChild(v);
+        grid.appendChild(u);
+      }
+    });
+    return grid;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Accordéon « quantités totales » dans la sidebar : somme des poids,   *
+   * volumes et articles de tous les rayons (avec €/kg et €/L moyens).    *
+   * ------------------------------------------------------------------ */
+
+  // Résumé compact affiché sur la ligne repliée (« ≈ 19,6 kg · 12 L »).
+  function quantitySummary(q) {
+    var parts = [];
+    if (q.grams > 0) parts.push('≈ ' + formatWeight(q.grams));
+    if (q.ml > 0) parts.push(formatVolume(q.ml));
+    if (parts.length === 0 && q.units > 0) {
+      parts.push(formatInt(q.units) + ' ' + t(q.units > 1 ? 'articles' : 'article'));
+    }
+    return parts.join(' · ');
+  }
+
+  function quantitySignature(q) {
+    return [
+      Math.round(q.units),
+      Math.round(q.grams), Math.round(q.gramsPrice * 100),
+      Math.round(q.ml), Math.round(q.mlPrice * 100)
+    ].join('|');
+  }
+
+  function applyQuantityTotalState(block) {
+    var row = block.querySelector('.' + QTOTAL_CLASS + '__row');
+    var panel = block.querySelector('.' + QTOTAL_CLASS + '__panel');
+    if (row) row.setAttribute('aria-expanded', qTotalOpen ? 'true' : 'false');
+    if (panel) panel.hidden = !qTotalOpen;
+  }
+
+  function buildQuantityTotalShell() {
+    var block = document.createElement('div');
+    block.className = QTOTAL_CLASS;
+
+    var row = document.createElement('div');
+    row.className = QTOTAL_CLASS + '__row';
+    row.setAttribute('aria-expanded', 'false');
+
+    var toggle = document.createElement('button');
+    toggle.type = 'button';
+    toggle.className = QTOTAL_CLASS + '__toggle';
+    toggle.setAttribute('aria-label', t('qTotalToggle'));
+    toggle.textContent = '▸'; // ▸
+    row.appendChild(toggle);
+
+    var title = document.createElement('span');
+    title.className = QTOTAL_CLASS + '__title';
+    title.textContent = t('qTotalTitle');
+    row.appendChild(title);
+
+    var value = document.createElement('span');
+    value.className = QTOTAL_CLASS + '__value';
+    row.appendChild(value);
+
+    var panel = document.createElement('div');
+    panel.className = QTOTAL_CLASS + '__panel';
+    panel.hidden = true;
+
+    // Clic n'importe où sur la ligne = (dé)plier ; état mémorisé en session.
+    row.addEventListener('click', function () {
+      qTotalOpen = !qTotalOpen;
+      applyQuantityTotalState(block);
+    });
+
+    block.appendChild(row);
+    block.appendChild(panel);
+    return block;
+  }
+
+  /**
+   * (Re)pose / met à jour l'accordéon « quantités totales » en bas du récap.
+   * Si rien à totaliser (ni poids, ni volume, ni articles), retire le bloc.
+   */
+  function ensureQuantityTotal(recap, q) {
+    var rows = buildQuantityRows(q);
+    var block = recap.querySelector('.' + QTOTAL_CLASS);
+
+    if (rows.length === 0) {
+      if (block && block.parentNode) block.parentNode.removeChild(block);
+      return;
+    }
+    if (!block) {
+      block = buildQuantityTotalShell();
+      recap.appendChild(block);
+    }
+
+    // Libellés traduits (au cas où la langue serait détectée après coup).
+    var titleEl = block.querySelector('.' + QTOTAL_CLASS + '__title');
+    if (titleEl && titleEl.textContent !== t('qTotalTitle')) {
+      titleEl.textContent = t('qTotalTitle');
+    }
+    var valueEl = block.querySelector('.' + QTOTAL_CLASS + '__value');
+    if (valueEl) valueEl.textContent = quantitySummary(q);
+
+    // Panneau (reconstruit seulement si les valeurs changent).
+    var panel = block.querySelector('.' + QTOTAL_CLASS + '__panel');
+    var sig = quantitySignature(q);
+    if (panel.getAttribute('data-cg-qsig') !== sig) {
+      panel.setAttribute('data-cg-qsig', sig);
+      panel.textContent = '';
+      panel.appendChild(buildQuantityGrid(rows));
+    }
+
+    applyQuantityTotalState(block);
+  }
+
   function headerTitleOf(header) {
     var el = header.querySelector('.title');
     return el ? el.textContent.trim() : '';
@@ -974,30 +1143,7 @@
     if (panel.getAttribute('data-cg-qsig') !== sig) {
       panel.setAttribute('data-cg-qsig', sig);
       panel.textContent = '';
-      var grid = document.createElement('div');
-      grid.className = 'cg-hdr-grid';
-      qrows.forEach(function (r) {
-        if (r.full != null) {
-          var f = document.createElement('span');
-          f.className = 'cg-hdr-full';
-          f.textContent = r.full;
-          grid.appendChild(f);
-        } else {
-          var k = document.createElement('span');
-          k.className = 'cg-hdr-k';
-          k.textContent = r.label;
-          var v = document.createElement('span');
-          v.className = 'cg-hdr-v';
-          v.textContent = r.value;
-          var u = document.createElement('span');
-          u.className = 'cg-hdr-u';
-          u.textContent = r.unit;
-          grid.appendChild(k);
-          grid.appendChild(v);
-          grid.appendChild(u);
-        }
-      });
-      panel.appendChild(grid);
+      panel.appendChild(buildQuantityGrid(qrows));
     }
 
     // Chevron (dans .title-and-chevron, l'emplacement prévu par le site).
@@ -1145,6 +1291,8 @@
 
     var categories = document.querySelectorAll('.category');
     var rows = [];
+    // Cumul des quantités de tous les rayons (pour « quantités totales »).
+    var grandQ = { units: 0, grams: 0, gramsPrice: 0, ml: 0, mlPrice: 0 };
 
     categories.forEach(function (category) {
       var info = computeCategory(category);
@@ -1154,6 +1302,12 @@
       ensureHeaderAccordion(category, info.quantities);
       // Le tri s'applique aussi aux marques au sein de chaque rayon.
       applySort(info.brands);
+      var q = info.quantities;
+      grandQ.units += q.units;
+      grandQ.grams += q.grams;
+      grandQ.gramsPrice += q.gramsPrice;
+      grandQ.ml += q.ml;
+      grandQ.mlPrice += q.mlPrice;
       rows.push({
         title: getCategoryTitle(category),
         total: info.total,
@@ -1166,7 +1320,7 @@
     // dans la liste, eux, restent toujours dans l'ordre de la page).
     applySort(rows);
 
-    renderRecap(rows);
+    renderRecap(rows, grandQ);
 
     // Accordéons de la sidebar (retrait + code promo).
     ensureSidebarAccordions();
