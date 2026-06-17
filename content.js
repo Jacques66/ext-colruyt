@@ -1180,7 +1180,19 @@
   function runUpdate() {
     if (debounceTimer) { clearTimeout(debounceTimer); debounceTimer = null; }
     if (maxWaitTimer) { clearTimeout(maxWaitTimer); maxWaitTimer = null; }
-    updateTotals();
+    safeUpdate();
+  }
+
+  // Enveloppe défensive : une erreur inattendue (API navigateur, DOM en cours
+  // de remplacement par Vue…) ne doit jamais interrompre l'observation ni la
+  // boucle de secours. On reste donc silencieux et on réessaiera au cycle
+  // suivant.
+  function safeUpdate() {
+    try {
+      updateTotals();
+    } catch (e) {
+      /* on réessaiera */
+    }
   }
 
   function scheduleUpdate() {
@@ -1204,22 +1216,49 @@
     );
   }
 
+  var cgObserver = null;
+  var observedTarget = null;
+
+  /**
+   * (Re)branche l'observateur sur le bon nœud. La SPA Vue peut ne pas avoir
+   * encore monté `page-content` au démarrage, ou le remplacer ensuite : dans ce
+   * cas l'ancien nœud observé devient « mort » et plus aucune mise à jour
+   * n'arrive. On se rebranche donc dès que la cible change. (C'est ce qui
+   * pouvait empêcher l'affichage selon le navigateur / le timing de rendu.)
+   */
+  function ensureObserver() {
+    if (!cgObserver) cgObserver = new MutationObserver(scheduleUpdate);
+    var target = getObserveTarget();
+    if (target && target !== observedTarget) {
+      try { cgObserver.disconnect(); } catch (e) { /* noop */ }
+      cgObserver.observe(target, {
+        childList: true,
+        subtree: true,
+        characterData: true
+      });
+      observedTarget = target;
+    }
+  }
+
   /**
    * Observe le DOM du panier et relance le calcul à chaque mutation
    * (changement de quantité, suppression de produit, promo appliquée…).
+   * Un filet de sécurité borné couvre les premières secondes : il rebranche
+   * l'observateur si la cible a changé et relance le calcul, de sorte que les
+   * totaux finissent par s'afficher même si la mutation initiale de la SPA
+   * n'a pas été captée. Passé ce délai, l'observateur suffit.
    */
   function init() {
     injectStyles();
+    ensureObserver();
+    safeUpdate();
 
-    var observer = new MutationObserver(scheduleUpdate);
-    observer.observe(getObserveTarget(), {
-      childList: true,
-      subtree: true,
-      characterData: true
-    });
-
-    // Calcul initial.
-    updateTotals();
+    var tries = 0;
+    var poll = setInterval(function () {
+      ensureObserver();
+      safeUpdate();
+      if (++tries >= 40) clearInterval(poll); // ~20 s à 500 ms
+    }, 500);
   }
 
   if (document.readyState === 'loading') {

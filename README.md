@@ -115,6 +115,10 @@ l'attribut `<html lang>` :
   les mutations rapprochées (**~250 ms**) tout en garantissant une exécution
   au plus tard après **~800 ms** — pour ne pas être « affamée » par les
   mutations continues des scripts tiers de la page (chat, Tealium…).
+  L'observateur se **rebranche** automatiquement si la SPA remplace son nœud
+  racine, et un **filet de sécurité borné** (quelques secondes au démarrage)
+  relance le calcul — pour que les totaux s'affichent de façon fiable quel que
+  soit le navigateur (Chrome, Brave…) ou le timing de rendu de Vue.
 - **Idempotence** : les compteurs `.count` traités sont marqués
   (`data-cg-total-processed`) ; la valeur est mise à jour en place plutôt que de
   rajouter un nœud. Les libellés sont écrits via `textContent` (pas d'injection HTML).
