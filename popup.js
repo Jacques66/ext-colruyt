@@ -142,10 +142,12 @@
         save();
       });
 
-      // Le clic sur toute la ligne bascule l'interrupteur (sauf clic direct
-      // sur la case, déjà géré par le navigateur).
+      // Le clic sur la zone de texte bascule l'interrupteur. Les clics sur
+      // l'interrupteur lui-même (le <label>) sont déjà gérés nativement par le
+      // navigateur : il ne faut donc PAS re-basculer ici, sans quoi le double
+      // basculement annulerait l'action (toggle impossible à désactiver).
       li.addEventListener('click', function (e) {
-        if (e.target === input) return;
+        if (e.target.closest && e.target.closest('.switch')) return;
         input.checked = !input.checked;
         input.dispatchEvent(new Event('change'));
       });
