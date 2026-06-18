@@ -55,7 +55,8 @@
       langLabel: 'Langue',
       note: 'Extension non officielle.',
       reset: 'Tout réactiver',
-      settings: 'réglages'
+      settings: 'réglages',
+      courtesy: 'Avec les compliments d’' // suivi du lien « InZeMobile »
     },
     nl: {
       title: 'Totaal per afdeling',
@@ -63,7 +64,8 @@
       langLabel: 'Taal',
       note: 'Niet-officiële extensie.',
       reset: 'Alles opnieuw inschakelen',
-      settings: 'instellingen'
+      settings: 'instellingen',
+      courtesy: 'Met de complimenten van ' // gevolgd door de link « InZeMobile »
     }
   };
 
@@ -147,6 +149,16 @@
     document.getElementById('note').textContent = ui.note;
     var resetBtn = document.getElementById('reset');
     resetBtn.textContent = ui.reset;
+
+    // Mention de courtoisie + lien vers InZeMobile, tout en bas.
+    var courtesy = document.getElementById('courtesy');
+    courtesy.textContent = ui.courtesy;
+    var by = document.createElement('a');
+    by.href = 'https://inzemobile.com';
+    by.target = '_blank';
+    by.rel = 'noopener noreferrer';
+    by.textContent = 'InZeMobile';
+    courtesy.appendChild(by);
 
     renderLang();
 

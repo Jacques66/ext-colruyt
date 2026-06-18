@@ -105,6 +105,14 @@
       transition: border-color .12s ease;
     }
     button.reset:hover { border-color: var(--cg-blue-bright); }
+    .courtesy {
+      padding: 8px 16px 12px; text-align: center; font-size: 11px;
+      color: var(--cg-grey); border-top: 1px solid var(--cg-line);
+    }
+    .courtesy a {
+      color: var(--cg-blue-bright); font-weight: 600; text-decoration: none;
+    }
+    .courtesy a:hover, .courtesy a:focus { text-decoration: underline; }
   </style>
 </head>
 <body>
@@ -121,6 +129,7 @@
     <span class="note" id="note"></span>
     <button type="button" class="reset" id="reset"></button>
   </footer>
+  <div class="courtesy" id="courtesy"></div>
   <script src="popup.js"></script>
 </body>
 </html>
