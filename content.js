@@ -110,6 +110,9 @@
    * défaut, de sorte que l'extension fonctionne sans configuration.      *
    * ------------------------------------------------------------------ */
   var SETTINGS_KEY = 'cgSettings';
+  // Langue détectée de la page, publiée pour que le popup puisse résoudre son
+  // mode « Auto » et afficher ses libellés dans la bonne langue.
+  var SITE_LANG_KEY = 'cgSiteLang';
   var settings = {};
   function isOn(key) { return settings[key] !== false; }
 
@@ -155,6 +158,21 @@
     if (document.body) {
       document.body.classList.toggle('cg-feat-sticky', isOn('stickySidebar'));
     }
+  }
+
+  // Publie la langue de la page (une fois, si elle change) pour le popup.
+  var lastSiteLang = null;
+  function publishSiteLang() {
+    var lang = detectSiteLang();
+    if (lang === lastSiteLang) return;
+    lastSiteLang = lang;
+    var store = cgStorage();
+    if (!store) return;
+    try {
+      var obj = {};
+      obj[SITE_LANG_KEY] = lang;
+      store.set(obj);
+    } catch (e) { /* noop */ }
   }
 
   // Repli initial (une fois) des accordéons natifs de la sidebar.
@@ -218,10 +236,11 @@
   }
 
   /**
-   * Détecte la langue de la page (fr par défaut).
+   * Détecte la langue de la PAGE (fr par défaut).
    * S'appuie sur l'URL (/nl/…/winkelwagen vs /fr/…/chariot) puis sur <html lang>.
+   * Sert pour les liens d'assortiment (dont les libellés sont ceux du site).
    */
-  function detectLang() {
+  function detectSiteLang() {
     var path = location.pathname.toLowerCase();
     if (path.indexOf('/nl/') !== -1 || path.indexOf('winkelwagen') !== -1) {
       return 'nl';
@@ -231,6 +250,16 @@
     }
     var htmlLang = (document.documentElement.getAttribute('lang') || '').toLowerCase();
     return htmlLang.indexOf('nl') === 0 ? 'nl' : 'fr';
+  }
+
+  /**
+   * Langue des LIBELLÉS de l'extension. Respecte le choix fait dans le popup
+   * (`settings.lang` = 'fr' / 'nl') ; sinon (« auto » / non défini) suit la
+   * langue de la page. Permet à l'utilisateur de forcer FR ou NL.
+   */
+  function detectLang() {
+    if (settings.lang === 'fr' || settings.lang === 'nl') return settings.lang;
+    return detectSiteLang();
   }
 
   function t(key) {
@@ -355,9 +384,13 @@
         'color:currentColor;transition:transform .12s ease;}',
       '.header.background-blue[aria-expanded="true"] .cg-hdr-chevron{' +
         'transform:rotate(180deg);}',
-      /* Lien vers la page d'assortiment, posé sur le nom du rayon. */
-      '.cg-cat-link{color:inherit;text-decoration:none;cursor:pointer;}',
-      '.cg-cat-link:hover,.cg-cat-link:focus{text-decoration:underline;}',
+      /* Lien vers la page d'assortiment, posé sur le nom du rayon. Affordance */
+      /* discrète (souligné pointillé) pour signaler qu\'il est cliquable — et */
+      /* rendre visible l\'activation/désactivation de la fonction. */
+      '.cg-cat-link{color:inherit;cursor:pointer;text-decoration:underline;' +
+        'text-decoration-style:dotted;text-decoration-thickness:1px;' +
+        'text-underline-offset:3px;text-decoration-color:currentColor;}',
+      '.cg-cat-link:hover,.cg-cat-link:focus{text-decoration-style:solid;}',
       '.cg-hdr-panel{padding:8px 16px;font-size:0.85em;color:#1C3661;' +
         'background:#eef3fb;border-top:1px solid #dbe3ef;text-align:right;}',
       '.cg-hdr-grid{display:inline-grid;grid-template-columns:auto auto auto;' +
@@ -556,6 +589,26 @@
   }
 
   /**
+   * Réaligne les libellés du tri (bouton + options) sur la langue courante.
+   * Utile quand l'utilisateur change de langue depuis le popup.
+   */
+  function refreshSortLabels(recap) {
+    var label = recap.querySelector('.' + RECAP_CLASS + '__sort-label');
+    if (label) label.textContent = t(sortLabelKey(sortMode));
+    var options = recap.querySelectorAll('.' + RECAP_CLASS + '__sort-option');
+    Array.prototype.forEach.call(options, function (li) {
+      var val = li.getAttribute('data-value');
+      for (var i = 0; i < SORT_OPTIONS.length; i++) {
+        if (SORT_OPTIONS[i].value === val) {
+          var txt = t(SORT_OPTIONS[i].key);
+          if (li.textContent !== txt) li.textContent = txt;
+          break;
+        }
+      }
+    });
+  }
+
+  /**
    * Construit / met à jour le récapitulatif « Total par rayon » dans la sidebar,
    * juste après le bloc « Total estimé ».
    */
@@ -573,11 +626,14 @@
 
     var recap = ensureRecap(orderTotals);
 
-    // Titre traduit (au cas où la langue serait détectée après coup).
+    // Titre traduit (au cas où la langue serait détectée/choisie après coup).
     var titleEl = recap.querySelector('.' + RECAP_CLASS + '__title');
     if (titleEl && titleEl.textContent !== t('recapTitle')) {
       titleEl.textContent = t('recapTitle');
     }
+
+    // Libellés du tri (bouton + options) : suivent la langue choisie.
+    refreshSortLabels(recap);
 
     // Accordéon « quantités totales » (indépendant du tri/du contenu de la
     // liste : mis à jour à chaque passage, même quand la liste ne change pas).
@@ -1058,6 +1114,7 @@
 
   function quantitySignature(q) {
     return [
+      detectLang(), // les libellés du panneau dépendent de la langue
       Math.round(q.units),
       Math.round(q.grams), Math.round(q.gramsPrice * 100),
       Math.round(q.ml), Math.round(q.mlPrice * 100)
@@ -1193,12 +1250,17 @@
       return;
     }
 
-    var href = assortmentHref(name, detectLang());
+    // Le lien pointe vers l'assortiment dans la langue de la PAGE (les noms de
+    // rayons sont ceux du site), indépendamment de la langue d'affichage.
+    var href = assortmentHref(name, detectSiteLang());
     if (!href) return; // rayon inconnu : on ne touche à rien
 
     var link = titleEl.querySelector('a.' + CAT_LINK_CLASS);
     if (link) {
       if (link.getAttribute('href') !== href) link.setAttribute('href', href);
+      if (link.getAttribute('title') !== t('openCategory')) {
+        link.setAttribute('title', t('openCategory'));
+      }
       return;
     }
     // Première pose : envelopper le texte du titre dans un lien. Le titre ne
@@ -1437,6 +1499,9 @@
 
     // Sidebar figée (CSS conditionnelle) : <body> peut être (re)monté tard.
     applyStickySetting();
+
+    // Publie la langue de la page pour le popup (mode « Auto »).
+    publishSiteLang();
   }
 
   // Debounce avec délai maximal : on regroupe les mutations rapprochées, mais
@@ -1523,6 +1588,7 @@
     // d'API de stockage (contexte hors extension), on démarre tout activé.
     loadSettings(function () {
       applyStickySetting();
+      publishSiteLang();
       ensureObserver();
       safeUpdate();
 

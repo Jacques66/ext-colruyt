@@ -59,7 +59,7 @@ catégorie — pour savoir, d'un coup d'œil, combien coûte chaque rayon.**
 | 🛍️&nbsp;**Rayon&nbsp;en&nbsp;un&nbsp;clic** | Le **nom du rayon** dans l'en-tête de gauche devient un **lien** : un clic ouvre la **page d'assortiment** correspondante dans un **nouvel onglet** (pratique pour compléter ses courses). |
 | 📌&nbsp;**Sidebar&nbsp;figée** | La colonne de droite reste visible pendant le défilement (sticky, avec défilement interne si besoin). |
 | 🗂️&nbsp;**Sections&nbsp;repliées** | Les blocs **« Données pour le retrait »** (adresse + horaire) et **« Code promo »** sont repliés au démarrage — via l'accordéon **natif du site** — pour gagner de la place. Si l'adresse ou l'horaire manque, un **⚠️** s'affiche et le titre passe en **rouge** tant que le bloc est replié. |
-| ⚙️&nbsp;**Réglages&nbsp;à&nbsp;la&nbsp;carte** | Un clic sur l'**icône de l'extension** ouvre un **popup** où l'on **active/désactive chaque fonction** (totaux en liste, récap, détail par marque, quantités totales, quantités par rayon, lien rayon, repli des blocs, alerte retrait, sidebar figée). L'effet est **immédiat** dans le chariot ouvert ; le choix est mémorisé. |
+| ⚙️&nbsp;**Réglages&nbsp;à&nbsp;la&nbsp;carte** | Un clic sur l'**icône de l'extension** ouvre un **popup** où l'on **active/désactive chaque fonction** (totaux en liste, récap, détail par marque, quantités totales, quantités par rayon, lien rayon, repli des blocs, alerte retrait, sidebar figée) et où l'on **choisit la langue** (**Auto · FR · NL** ; Auto suit la langue du chariot). L'effet est **immédiat** dans le chariot ouvert ; les choix sont mémorisés. |
 | 🔄&nbsp;**Toujours&nbsp;à&nbsp;jour** | Les totaux se recalculent automatiquement à chaque changement de quantité (réactivité Vue.js). |
 | 🛡️&nbsp;**Garde-fou&nbsp;structure** | Au chargement, l'extension fait quelques vérifications **heuristiques** de la structure. Si la page Collect&Go semble avoir évolué, elle **se désactive** et affiche un **bandeau** (à la place du détail dans la sidebar, ou en **rouge tout en haut** si l'ancrage a disparu), afin de **limiter** le risque de totaux erronés. Heuristique, donc sans garantie. |
 
@@ -71,9 +71,13 @@ catégorie — pour savoir, d'un coup d'œil, combien coûte chaque rayon.**
 
 ## 🌍 Bilingue (FR / NL)
 
-Le site existe en français et en néerlandais ; l'extension s'adapte
-automatiquement, d'après l'URL (`/fr/chariot` vs `/nl/winkelwagen`) puis
-l'attribut `<html lang>` :
+Le site existe en français et en néerlandais ; par défaut, l'extension
+**s'adapte automatiquement** (mode **Auto**), d'après l'URL (`/fr/chariot` vs
+`/nl/winkelwagen`) puis l'attribut `<html lang>`. Depuis le **popup** (icône de
+l'extension), on peut aussi **forcer la langue** : **Auto · FR · NL** — le choix
+est mémorisé et s'applique immédiatement aux libellés ajoutés. Les **liens vers
+les rayons**, eux, restent toujours dans la langue du site (les noms y
+correspondent).
 
 | | 🇫🇷 Français | 🇳🇱 Nederlands |
 |---|---|---|
@@ -299,6 +303,7 @@ per categorie — om in één oogopslag te zien hoeveel elke afdeling kost.**
 | 🛍️&nbsp;**Afdeling&nbsp;in&nbsp;één&nbsp;klik** | De **naam van de afdeling** in de linkerkop wordt een **link**: een klik opent de bijbehorende **assortimentspagina** in een **nieuw tabblad** (handig om je boodschappen aan te vullen). |
 | 📌&nbsp;**Vastgezette&nbsp;zijbalk** | De rechterkolom blijft zichtbaar tijdens het scrollen (sticky, met interne scroll indien nodig). |
 | 🗂️&nbsp;**Ingeklapte&nbsp;secties** | De blokken **"Gegevens voor het afhalen"** (adres + uur) en **"Promocode"** zijn ingeklapt bij het opstarten — via de **eigen accordeon van de site** — om plaats te besparen. Als het adres of het uur ontbreekt, verschijnt een **⚠️** en wordt de titel **rood** zolang het blok ingeklapt is. |
+| ⚙️&nbsp;**Instellingen&nbsp;op&nbsp;maat** | Een klik op het **extensie-icoon** opent een **popup** waar je **elke functie in-/uitschakelt** (totalen in de lijst, overzicht, detail per merk, totale hoeveelheden, hoeveelheden per afdeling, afdelingslink, blokken inklappen, afhaalwaarschuwing, vaste zijbalk) en de **taal kiest** (**Auto · FR · NL**; Auto volgt de taal van de mand). Het effect is **onmiddellijk** in de geopende mand; de keuzes worden onthouden. |
 | 🔄&nbsp;**Altijd&nbsp;up-to-date** | De totalen worden automatisch herberekend bij elke wijziging van de hoeveelheid (reactiviteit van Vue.js). |
 | 🛡️&nbsp;**Structuurbeveiliging** | Bij het laden voert de extensie enkele **heuristische** controles van de structuur uit. Als de Collect&Go-pagina lijkt te zijn geëvolueerd, **schakelt ze zichzelf uit** en toont een **banner** (in plaats van het detail in de zijbalk, of in het **rood bovenaan** als het ankerpunt verdwenen is), om het risico op foutieve totalen te **beperken**. Heuristisch, dus zonder garantie. |
 
@@ -310,9 +315,13 @@ per categorie — om in één oogopslag te zien hoeveel elke afdeling kost.**
 
 ## 🌍 Tweetalig (FR / NL)
 
-De site bestaat in het Frans en het Nederlands; de extensie past zich
-automatisch aan, op basis van de URL (`/fr/chariot` vs `/nl/winkelwagen`) en
-daarna het attribuut `<html lang>`:
+De site bestaat in het Frans en het Nederlands; standaard past de extensie
+zich **automatisch aan** (modus **Auto**), op basis van de URL (`/fr/chariot`
+vs `/nl/winkelwagen`) en daarna het attribuut `<html lang>`. Via de **popup**
+(extensie-icoon) kan je de taal ook **forceren**: **Auto · FR · NL** — de keuze
+wordt onthouden en geldt onmiddellijk voor de toegevoegde labels. De **links
+naar de afdelingen** blijven steeds in de taal van de site (de namen komen
+daarmee overeen):
 
 | | 🇫🇷 Frans | 🇳🇱 Nederlands |
 |---|---|---|

@@ -37,6 +37,25 @@
       font-size: 11.5px;
       color: var(--cg-grey);
     }
+    /* Sélecteur de langue (contrôle segmenté Auto / FR / NL). */
+    .lang {
+      display: flex; align-items: center; gap: 8px; margin-top: 10px;
+    }
+    .lang-title { font-size: 11.5px; color: var(--cg-grey); }
+    .seg {
+      display: inline-flex; border: 1px solid #cbd2e0; border-radius: 7px;
+      overflow: hidden;
+    }
+    .seg button {
+      font: inherit; font-size: 11.5px; color: var(--cg-blue); background: #fff;
+      border: 0; border-left: 1px solid #e2e4ed; padding: 4px 10px; cursor: pointer;
+      transition: background-color .12s ease, color .12s ease;
+    }
+    .seg button:first-child { border-left: 0; }
+    .seg button:hover { background: var(--cg-hover); }
+    .seg button[aria-pressed="true"] {
+      background: var(--cg-blue); color: #fff; font-weight: 600;
+    }
     ul {
       list-style: none;
       margin: 0;
@@ -92,6 +111,10 @@
   <header>
     <h1 id="title">Totaux par rayon</h1>
     <p class="subtitle" id="subtitle"></p>
+    <div class="lang">
+      <span class="lang-title" id="lang-title"></span>
+      <span class="seg" id="lang-seg" role="group"></span>
+    </div>
   </header>
   <ul id="list" aria-label="Fonctionnalités"></ul>
   <footer>

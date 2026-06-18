@@ -2,18 +2,19 @@
  * Réglages de l'extension « Totaux par rayon — pour Collect&Go ».
  *
  * Popup d'action (icône de la barre d'outils) : une case à cocher par
- * fonctionnalité. L'état est stocké dans `chrome.storage.local` sous la clé
- * `cgSettings` (un booléen par fonction ; absent = activé par défaut). Le
- * content script écoute `chrome.storage.onChanged` et applique les changements
- * immédiatement dans le chariot ouvert, sans rechargement.
+ * fonctionnalité, plus un sélecteur de langue (Auto / FR / NL). L'état est
+ * stocké dans `chrome.storage.local` sous la clé `cgSettings` (un booléen par
+ * fonction ; absent = activé par défaut ; `lang` = 'fr'|'nl' ou absent pour
+ * « Auto »). Le content script écoute `chrome.storage.onChanged` et applique
+ * les changements immédiatement dans le chariot ouvert, sans rechargement.
+ *
+ * « Auto » suit intelligemment la langue de la page : le content script publie
+ * la langue détectée du chariot sous la clé `cgSiteLang`, que ce popup lit.
  */
 'use strict';
 (function () {
   var SETTINGS_KEY = 'cgSettings';
-
-  // Langue du popup : déduite de la langue de l'interface du navigateur.
-  var lang = (navigator.language || 'fr').toLowerCase().indexOf('nl') === 0
-    ? 'nl' : 'fr';
+  var SITE_LANG_KEY = 'cgSiteLang';
 
   // Une entrée par fonctionnalité. Les clés correspondent à celles lues par
   // content.js (fonction `isOn`). L'ordre = l'ordre d'affichage.
@@ -51,20 +52,39 @@
     fr: {
       title: 'Totaux par rayon',
       subtitle: 'Activez ou désactivez chaque fonction. Effet immédiat dans le chariot ouvert.',
+      langLabel: 'Langue',
       note: 'Extension non officielle.',
-      reset: 'Tout réactiver'
+      reset: 'Tout réactiver',
+      settings: 'réglages'
     },
     nl: {
       title: 'Totaal per afdeling',
       subtitle: 'Schakel elke functie in of uit. Onmiddellijk effect in de geopende mand.',
+      langLabel: 'Taal',
       note: 'Niet-officiële extensie.',
-      reset: 'Alles opnieuw inschakelen'
+      reset: 'Alles opnieuw inschakelen',
+      settings: 'instellingen'
     }
   };
 
-  // État courant (absent = activé par défaut).
+  // État courant. `settings` : réglages (clé `lang` = 'fr'|'nl' ou absent pour
+  // Auto ; les autres clés sont des booléens, absent = activé). `siteLang` :
+  // langue détectée du chariot, publiée par le content script.
   var settings = {};
+  var siteLang = null;
   function isOn(key) { return settings[key] !== false; }
+
+  // Langue effective d'affichage : choix explicite, sinon langue du chariot,
+  // sinon langue du navigateur, sinon FR.
+  function navLang() {
+    return (navigator.language || 'fr').toLowerCase().indexOf('nl') === 0 ? 'nl' : 'fr';
+  }
+  function autoLang() {
+    return (siteLang === 'fr' || siteLang === 'nl') ? siteLang : navLang();
+  }
+  function effectiveLang() {
+    return (settings.lang === 'fr' || settings.lang === 'nl') ? settings.lang : autoLang();
+  }
 
   var storage = (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local)
     ? chrome.storage.local : null;
@@ -72,8 +92,9 @@
   function load(cb) {
     if (!storage) { cb(); return; }
     try {
-      storage.get(SETTINGS_KEY, function (res) {
+      storage.get([SETTINGS_KEY, SITE_LANG_KEY], function (res) {
         if (res && res[SETTINGS_KEY]) settings = res[SETTINGS_KEY];
+        if (res && res[SITE_LANG_KEY]) siteLang = res[SITE_LANG_KEY];
         cb();
       });
     } catch (e) { cb(); }
@@ -88,20 +109,46 @@
     } catch (e) { /* noop */ }
   }
 
+  function renderLang() {
+    var ui = UI[effectiveLang()];
+    document.getElementById('lang-title').textContent = ui.langLabel;
+
+    var seg = document.getElementById('lang-seg');
+    seg.textContent = '';
+    var choice = (settings.lang === 'fr' || settings.lang === 'nl') ? settings.lang : 'auto';
+    // « Auto » indique la langue résolue, p. ex. « Auto · NL ».
+    var options = [
+      { value: 'auto', label: 'Auto · ' + autoLang().toUpperCase() },
+      { value: 'fr', label: 'FR' },
+      { value: 'nl', label: 'NL' }
+    ];
+    options.forEach(function (opt) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = opt.label;
+      b.setAttribute('aria-pressed', opt.value === choice ? 'true' : 'false');
+      b.addEventListener('click', function () {
+        if (opt.value === 'auto') delete settings.lang;
+        else settings.lang = opt.value;
+        save();
+        render(); // ré-affiche tout le popup dans la nouvelle langue
+      });
+      seg.appendChild(b);
+    });
+  }
+
   function render() {
+    var lang = effectiveLang();
     var ui = UI[lang];
     document.documentElement.setAttribute('lang', lang);
-    document.title = ui.title + ' — ' + (lang === 'nl' ? 'instellingen' : 'réglages');
+    document.title = ui.title + ' — ' + ui.settings;
     document.getElementById('title').textContent = ui.title;
     document.getElementById('subtitle').textContent = ui.subtitle;
     document.getElementById('note').textContent = ui.note;
     var resetBtn = document.getElementById('reset');
     resetBtn.textContent = ui.reset;
-    resetBtn.addEventListener('click', function () {
-      settings = {};               // tout absent => tout activé
-      save();
-      syncInputs();
-    });
+
+    renderLang();
 
     var list = document.getElementById('list');
     list.textContent = '';
@@ -158,12 +205,14 @@
     });
   }
 
-  function syncInputs() {
-    var inputs = document.querySelectorAll('#list input[type="checkbox"]');
-    Array.prototype.forEach.call(inputs, function (input) {
-      input.checked = isOn(input.getAttribute('data-key'));
-    });
-  }
+  // Bouton « Tout réactiver » : réactive toutes les fonctions, en conservant le
+  // choix de langue (qui n'est pas une « fonction »).
+  document.getElementById('reset').addEventListener('click', function () {
+    settings = (settings.lang === 'fr' || settings.lang === 'nl')
+      ? { lang: settings.lang } : {};
+    save();
+    render();
+  });
 
   load(render);
 })();
