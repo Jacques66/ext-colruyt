@@ -103,6 +103,60 @@
   // État (déplié/replié) de l'accordéon « quantités totales » de la sidebar.
   var qTotalOpen = false;
 
+  /* ------------------------------------------------------------------ *
+   * Réglages : activation/désactivation de chaque fonction, pilotée par  *
+   * le popup d'action et persistée dans chrome.storage.local (clé        *
+   * `cgSettings`). Toute fonction absente du stockage est ACTIVÉE par    *
+   * défaut, de sorte que l'extension fonctionne sans configuration.      *
+   * ------------------------------------------------------------------ */
+  var SETTINGS_KEY = 'cgSettings';
+  var settings = {};
+  function isOn(key) { return settings[key] !== false; }
+
+  function cgStorage() {
+    try {
+      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+        return chrome.storage.local;
+      }
+    } catch (e) { /* contexte sans API extension */ }
+    return null;
+  }
+
+  function loadSettings(cb) {
+    var store = cgStorage();
+    if (!store) { if (cb) cb(); return; }
+    try {
+      store.get(SETTINGS_KEY, function (res) {
+        if (res && res[SETTINGS_KEY]) settings = res[SETTINGS_KEY];
+        if (cb) cb();
+      });
+    } catch (e) { if (cb) cb(); }
+  }
+
+  // Réagit aux changements faits depuis le popup : on relit, on applique la
+  // CSS conditionnelle (sidebar figée) et on relance un calcul complet — chaque
+  // fonction se (dé)pose alors elle-même selon son réglage.
+  function bindSettingsChanges() {
+    try {
+      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.onChanged) {
+        chrome.storage.onChanged.addListener(function (changes, area) {
+          if (area === 'local' && changes[SETTINGS_KEY]) {
+            settings = changes[SETTINGS_KEY].newValue || {};
+            applyStickySetting();
+            safeUpdate();
+          }
+        });
+      }
+    } catch (e) { /* noop */ }
+  }
+
+  // La sidebar figée est purement CSS : on bascule une classe sur <body>.
+  function applyStickySetting() {
+    if (document.body) {
+      document.body.classList.toggle('cg-feat-sticky', isOn('stickySidebar'));
+    }
+  }
+
   // Repli initial (une fois) des accordéons natifs de la sidebar.
   var accAutoCollapsed = { handover: false, promo: false };
   var cgStartTime = Date.now();
@@ -290,8 +344,8 @@
       '.cg-flash{animation:cg-flash 1.2s ease-out;}',
       /* Garde la colonne de droite visible au scroll (avec défilement */
       /* interne si elle dépasse la hauteur de l'écran). */
-      '.basket .sidebar{position:sticky;top:16px;align-self:flex-start;' +
-        'max-height:calc(100vh - 32px);overflow-y:auto;}',
+      'body.cg-feat-sticky .basket .sidebar{position:sticky;top:16px;' +
+        'align-self:flex-start;max-height:calc(100vh - 32px);overflow-y:auto;}',
       /* Alerte sur l'en-tête « Données pour le retrait » du site. */
       '.cg-acc-warn{color:#CB0000 !important;}',
       '.cg-warn-badge{margin-left:6px;}',
@@ -461,6 +515,18 @@
     var countEl = category.querySelector('.category-heading .count');
     if (!countEl) return;
 
+    // Fonction désactivée : retirer le total déjà posé (et son séparateur).
+    if (!isOn('categoryTotals')) {
+      var current = countEl.querySelector('.' + TOTAL_CLASS);
+      if (current) {
+        var sep = current.previousSibling;
+        if (sep && sep.nodeType === 3) countEl.removeChild(sep);
+        countEl.removeChild(current);
+        countEl.removeAttribute(PROCESSED_ATTR);
+      }
+      return;
+    }
+
     if (countEl.getAttribute(PROCESSED_ATTR) === '1') {
       var existing = countEl.querySelector('.' + TOTAL_CLASS);
       if (existing) {
@@ -498,6 +564,13 @@
     var orderTotals = document.querySelector('.sidebar .order-totals');
     if (!orderTotals) return;
 
+    // Récap désactivé : retirer le bloc s'il a déjà été posé.
+    if (!isOn('recap')) {
+      var prev = orderTotals.querySelector('.' + RECAP_CLASS);
+      if (prev && prev.parentNode) prev.parentNode.removeChild(prev);
+      return;
+    }
+
     var recap = ensureRecap(orderTotals);
 
     // Titre traduit (au cas où la langue serait détectée après coup).
@@ -530,7 +603,9 @@
    * éviter toute reconstruction inutile du DOM (et donc le scintillement).
    */
   function recapSignature(rows) {
-    var parts = [sortMode];
+    // Le réglage « détail par marque » change la structure des items : on
+    // l'inclut pour forcer une reconstruction quand il bascule.
+    var parts = [sortMode, 'bd:' + (isOn('brandDetail') ? 1 : 0)];
     rows.forEach(function (r) {
       parts.push(r.title + '=' + r.total.toFixed(2));
       if (r.brands) {
@@ -549,8 +624,8 @@
    */
   function buildRecapItem(row) {
     // Accordéon disponible pour tout rayon ayant au moins une marque
-    // (donc tous) — par cohérence, même les rayons mono-marque.
-    var hasBrands = row.brands && row.brands.length > 0;
+    // (donc tous) — par cohérence, même les rayons mono-marque. Désactivable.
+    var hasBrands = isOn('brandDetail') && row.brands && row.brands.length > 0;
     var expanded = hasBrands && expandedBrands[row.title] === true;
 
     var item = document.createElement('div');
@@ -817,6 +892,14 @@
     if (!titleEl) return;
     var container = headerEl.querySelector('.title-and-chevron') || headerEl;
 
+    // Fonction désactivée : retirer ⚠️ et le rouge éventuels.
+    if (!isOn('handoverWarning')) {
+      var posed = container.querySelector('.cg-warn-badge');
+      if (posed && posed.parentNode) posed.parentNode.removeChild(posed);
+      titleEl.classList.remove('cg-acc-warn');
+      return;
+    }
+
     var missing = isAddressMissing(wrapper) || isTimeslotMissing(wrapper);
     var warn = container.querySelector('.cg-warn-badge');
     if (missing && !warn) {
@@ -856,7 +939,7 @@
       // restent cohérents). On réessaie tant que le bloc n'est pas encore
       // rendu/ouvert ; passé la fenêtre, on n'y touche plus (respect de
       // l'usager, qui reste libre de replier/déplier ensuite).
-      if (!accAutoCollapsed[id]) {
+      if (isOn('collapseNative') && !accAutoCollapsed[id]) {
         if (isCollapsibleOpen(wrapper)) {
           var clicker = headerEl.querySelector('.title-and-chevron') || headerEl;
           clicker.click();
@@ -1032,8 +1115,15 @@
    * Si rien à totaliser (ni poids, ni volume, ni articles), retire le bloc.
    */
   function ensureQuantityTotal(recap, q) {
-    var rows = buildQuantityRows(q);
     var block = recap.querySelector('.' + QTOTAL_CLASS);
+
+    // Fonction désactivée : retirer le bloc s'il existe.
+    if (!isOn('quantityTotal')) {
+      if (block && block.parentNode) block.parentNode.removeChild(block);
+      return;
+    }
+
+    var rows = buildQuantityRows(q);
 
     if (rows.length === 0) {
       if (block && block.parentNode) block.parentNode.removeChild(block);
@@ -1095,6 +1185,14 @@
     if (!titleEl) return;
     var name = (titleEl.textContent || '').trim();
     if (!name) return;
+
+    // Fonction désactivée : « déballer » le lien éventuel (retour au texte nu).
+    if (!isOn('categoryLink')) {
+      var posed = titleEl.querySelector('a.' + CAT_LINK_CLASS);
+      if (posed) titleEl.textContent = posed.textContent;
+      return;
+    }
+
     var href = assortmentHref(name, detectLang());
     if (!href) return; // rayon inconnu : on ne touche à rien
 
@@ -1125,11 +1223,23 @@
   function ensureHeaderAccordion(category, q) {
     var header = category.querySelector('.header.background-blue');
     if (!header) return;
-    var qrows = buildQuantityRows(q);
-
-    // Panneau (frère, juste après l'en-tête).
     var parent = header.parentNode;
     if (!parent) return;
+
+    var tacOff = header.querySelector('.title-and-chevron') || header;
+
+    // Fonction désactivée : retirer panneau, chevron et état d'accordéon.
+    if (!isOn('headerAccordion')) {
+      var oldPanel = parent.querySelector('.cg-hdr-panel');
+      if (oldPanel && oldPanel.parentNode) oldPanel.parentNode.removeChild(oldPanel);
+      var oldChevron = tacOff.querySelector('.cg-hdr-chevron');
+      if (oldChevron && oldChevron.parentNode) oldChevron.parentNode.removeChild(oldChevron);
+      header.classList.remove('cg-hdr');
+      header.setAttribute('aria-expanded', 'false');
+      return;
+    }
+
+    var qrows = buildQuantityRows(q);
     var panel = parent.querySelector('.cg-hdr-panel');
     if (!panel) {
       panel = document.createElement('div');
@@ -1324,6 +1434,9 @@
 
     // Accordéons de la sidebar (retrait + code promo).
     ensureSidebarAccordions();
+
+    // Sidebar figée (CSS conditionnelle) : <body> peut être (re)monté tard.
+    applyStickySetting();
   }
 
   // Debounce avec délai maximal : on regroupe les mutations rapprochées, mais
@@ -1404,15 +1517,22 @@
    */
   function init() {
     injectStyles();
-    ensureObserver();
-    safeUpdate();
-
-    var tries = 0;
-    var poll = setInterval(function () {
+    bindSettingsChanges();
+    // On lit d'abord les réglages, puis on démarre : on évite ainsi d'afficher
+    // brièvement une fonction que l'utilisateur a désactivée. En l'absence
+    // d'API de stockage (contexte hors extension), on démarre tout activé.
+    loadSettings(function () {
+      applyStickySetting();
       ensureObserver();
       safeUpdate();
-      if (++tries >= 40) clearInterval(poll); // ~20 s à 500 ms
-    }, 500);
+
+      var tries = 0;
+      var poll = setInterval(function () {
+        ensureObserver();
+        safeUpdate();
+        if (++tries >= 40) clearInterval(poll); // ~20 s à 500 ms
+      }, 500);
+    });
   }
 
   if (document.readyState === 'loading') {

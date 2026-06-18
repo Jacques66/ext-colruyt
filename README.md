@@ -51,6 +51,7 @@ catégorie — pour savoir, d'un coup d'œil, combien coûte chaque rayon.**
 | 🛍️&nbsp;**Rayon&nbsp;en&nbsp;un&nbsp;clic** | Le **nom du rayon** dans l'en-tête de gauche devient un **lien** : un clic ouvre la **page d'assortiment** correspondante dans un **nouvel onglet** (pratique pour compléter ses courses). |
 | 📌&nbsp;**Sidebar&nbsp;figée** | La colonne de droite reste visible pendant le défilement (sticky, avec défilement interne si besoin). |
 | 🗂️&nbsp;**Sections&nbsp;repliées** | Les blocs **« Données pour le retrait »** (adresse + horaire) et **« Code promo »** sont repliés au démarrage — via l'accordéon **natif du site** — pour gagner de la place. Si l'adresse ou l'horaire manque, un **⚠️** s'affiche et le titre passe en **rouge** tant que le bloc est replié. |
+| ⚙️&nbsp;**Réglages&nbsp;à&nbsp;la&nbsp;carte** | Un clic sur l'**icône de l'extension** ouvre un **popup** où l'on **active/désactive chaque fonction** (totaux en liste, récap, détail par marque, quantités totales, quantités par rayon, lien rayon, repli des blocs, alerte retrait, sidebar figée). L'effet est **immédiat** dans le chariot ouvert ; le choix est mémorisé. |
 | 🔄&nbsp;**Toujours&nbsp;à&nbsp;jour** | Les totaux se recalculent automatiquement à chaque changement de quantité (réactivité Vue.js). |
 | 🛡️&nbsp;**Garde-fou&nbsp;structure** | Au chargement, l'extension fait quelques vérifications **heuristiques** de la structure. Si la page Collect&Go semble avoir évolué, elle **se désactive** et affiche un **bandeau** (à la place du détail dans la sidebar, ou en **rouge tout en haut** si l'ancrage a disparu), afin de **limiter** le risque de totaux erronés. Heuristique, donc sans garantie. |
 
@@ -87,7 +88,7 @@ l'attribut `<html lang>` :
 > Le zip est régénéré localement (`npm run build`) à chaque changement de code.
 > Un workflow GitHub Actions **vérifie** qu'il est bien à jour à chaque push
 > touchant une dépendance d'exécution (`manifest.json`, `pure.js`, `content.js`,
-> `icons/`) — il échoue sinon, mais ne committe rien.
+> `popup.html`, `popup.js`, `icons/`) — il échoue sinon, mais ne committe rien.
 
 ---
 
@@ -182,7 +183,9 @@ qu'un seul objectif : améliorer le confort de l'utilisateur de son chariot.
   Colruyt Group, aucun logo de la marque utilisé.
 - **Respectueux de la page** — lecture du DOM déjà affiché, **aucun appel
   serveur**, **aucune donnée** collectée ni transmise ; les composants
-  existants ne sont pas altérés.
+  existants ne sont pas altérés. Seules vos **préférences de réglages** (les
+  fonctions activées/désactivées et le tri) sont mémorisées **localement** sur
+  votre appareil (`chrome.storage.local`) — rien ne quitte le navigateur.
 - **Fidèle au design** — nous avons veillé à **ne pas trahir le _look & feel_**
   de la page Collect&Go (couleurs, typographie, composants natifs), par respect
   pour le travail de leurs équipes ; nos ajouts s'y intègrent discrètement.

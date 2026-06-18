@@ -9,6 +9,8 @@ on:
       - 'manifest.json'
       - 'pure.js'
       - 'content.js'
+      - 'popup.html'
+      - 'popup.js'
       - 'icons/**'
       - 'scripts/build-zip.sh'
       - 'dist/ext-colruyt.zip'
@@ -30,7 +32,7 @@ jobs:
           unzip -q dist/ext-colruyt.zip -d "$tmp"
 
           # Liste attendue (sources) vs liste embarquée (zip).
-          { printf '%s\n' manifest.json pure.js content.js; find icons -type f; } \
+          { printf '%s\n' manifest.json pure.js content.js popup.html popup.js; find icons -type f; } \
             | sort > /tmp/insrc
           ( cd "$tmp" && find . -type f | sed 's|^\./||' ) | sort > /tmp/inzip
 

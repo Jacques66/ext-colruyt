@@ -11,6 +11,6 @@ mkdir -p dist
 rm -f "$OUT"
 
 # -r : récursif (préserve icons/…) ; -X : pas d'attributs superflus.
-zip -r -X "$OUT" manifest.json pure.js content.js icons >/dev/null
+zip -r -X "$OUT" manifest.json pure.js content.js popup.html popup.js icons >/dev/null
 
 echo "Construit : $OUT"
