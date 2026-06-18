@@ -1,5 +1,13 @@
 <div align="center">
 
+**🌐 Langue / Taal : [🇫🇷 Français](#francais) · [🇳🇱 Nederlands](#nederlands)**
+
+</div>
+
+<a id="francais"></a>
+
+<div align="center">
+
 # 🛒 Totaux par rayon — pour Collect&Go
 
 **Extension Chrome non officielle qui enrichit la page panier de
@@ -229,3 +237,249 @@ d'un bon indice que nous ne traînerons pas pour la corriger 😉
 ## 📝 Licence
 
 [MIT](LICENSE) — © InZeMobile SRL. Utilisez, modifiez et partagez librement.
+
+---
+---
+
+<a id="nederlands"></a>
+
+<div align="center">
+
+**🌐 Taal / Langue : [🇳🇱 Nederlands](#nederlands) · [🇫🇷 Français](#francais)**
+
+# 🛒 Totalen per afdeling — voor Collect&Go
+
+**Niet-officiële Chrome-extensie die de winkelwagenpagina van
+[Collect&Go](https://www.collectandgo.be/nl/winkelwagen) verrijkt met de totalen
+per categorie — om in één oogopslag te zien hoeveel elke afdeling kost.**
+
+[![Manifest](https://img.shields.io/badge/Manifest-V3-blue)](manifest.json)
+[![Talen](https://img.shields.io/badge/talen-FR%20%2F%20NL-success)](#-tweetalig-fr--nl)
+[![Licentie](https://img.shields.io/badge/licentie-MIT-lightgrey)](#-licentie)
+
+</div>
+
+> ⚠️ **Niet-geaffilieerd.** Deze extensie is een onafhankelijk project,
+> **niet-officieel** en **zonder enige band** met Collect&Go of Colruyt Group.
+> "Collect&Go" en "Colruyt" zijn merken van hun respectieve eigenaars, hier
+> uitsluitend vermeld voor beschrijvende doeleinden (compatibiliteit). Geen
+> enkel merklogo wordt gebruikt. De extensie werkt aan de browserkant, verzamelt
+> noch verzendt enige gegevens, en heeft geen interactie met de servers van
+> Collect&Go.
+
+---
+
+## 📸 Voorbeeld
+
+### Totalen per afdeling in de lijst
+
+| Voor | Na |
+|:---:|:---:|
+| ![Afdelingskop zonder totaal](docs/screenshots/liste-rayons-before.png) | ![Afdelingskop met het toegevoegde totaal](docs/screenshots/liste-rayons-after.png) |
+
+### Overzicht in de zijbalk
+
+| Voor | Na |
+|:---:|:---:|
+| ![Oorspronkelijke zijbalk](docs/screenshots/recap-before.png) | ![Zijbalk met het overzicht "Totaal per afdeling"](docs/screenshots/recap-after.png) |
+
+---
+
+## ✨ Functies
+
+| | |
+|---|---|
+| 🧮&nbsp;**Totalen&nbsp;in&nbsp;de&nbsp;lijst** | Voor elke sectie verschijnt de som van de prijzen **vetgedrukt** naast de teller — op één enkele regel. |
+| 📋&nbsp;**Overzicht&nbsp;zijbalk** | Een blok **"Totaal per afdeling"** verschijnt onder het **Geschatte totaal**, met het detail van elke afdeling. |
+| 🧺&nbsp;**Totale&nbsp;hoeveelheden** | Onderaan het overzicht telt een **accordeon** **de hele winkelwagen** op: aantal artikelen, **totaalgewicht** (≈ kg, gemiddelde €/kg) en **totaalvolume** (L, gemiddelde €/L). |
+| 🏷️&nbsp;**Detail&nbsp;per&nbsp;merk** | Elke afdeling van het overzicht is een **accordeon**: een klik op de chevron onthult het detail per merk (bv. Boni, Duyvis, Doritos…). Een **oranje bolletje** markeert de **eigen merken** van Colruyt (Boni, Everyday, Bio-Time…). |
+| 📦&nbsp;**Hoeveelheden&nbsp;per&nbsp;afdeling** | Een klik op een **afdelingskop** (links) klapt een discreet paneel open: **werkelijk aantal artikelen** (zakjes/stuks) en, afhankelijk van de producten, het **gewicht** (≈ kg, €/kg) en het **volume** (L, €/L). Gewicht/volume afgeleid uit de prijs per kg/L (heuristische terugval op het label) → weergegeven met "≈". |
+| ↕️&nbsp;**Sortering&nbsp;naar&nbsp;keuze** | Een vervolgkeuzemenu sorteert het overzicht: bedrag aflopend, oplopend, of volgorde van de lijst. De keuze wordt onthouden. |
+| 🔗&nbsp;**Snelle&nbsp;navigatie** | Op een afdeling in het overzicht klikken laat de pagina ernaartoe scrollen, waarbij die kort knippert. |
+| 🛍️&nbsp;**Afdeling&nbsp;in&nbsp;één&nbsp;klik** | De **naam van de afdeling** in de linkerkop wordt een **link**: een klik opent de bijbehorende **assortimentspagina** in een **nieuw tabblad** (handig om je boodschappen aan te vullen). |
+| 📌&nbsp;**Vastgezette&nbsp;zijbalk** | De rechterkolom blijft zichtbaar tijdens het scrollen (sticky, met interne scroll indien nodig). |
+| 🗂️&nbsp;**Ingeklapte&nbsp;secties** | De blokken **"Gegevens voor het afhalen"** (adres + uur) en **"Promocode"** zijn ingeklapt bij het opstarten — via de **eigen accordeon van de site** — om plaats te besparen. Als het adres of het uur ontbreekt, verschijnt een **⚠️** en wordt de titel **rood** zolang het blok ingeklapt is. |
+| 🔄&nbsp;**Altijd&nbsp;up-to-date** | De totalen worden automatisch herberekend bij elke wijziging van de hoeveelheid (reactiviteit van Vue.js). |
+| 🛡️&nbsp;**Structuurbeveiliging** | Bij het laden voert de extensie enkele **heuristische** controles van de structuur uit. Als de Collect&Go-pagina lijkt te zijn geëvolueerd, **schakelt ze zichzelf uit** en toont een **banner** (in plaats van het detail in de zijbalk, of in het **rood bovenaan** als het ankerpunt verdwenen is), om het risico op foutieve totalen te **beperken**. Heuristisch, dus zonder garantie. |
+
+> Voorbeeld, in de kop van een afdeling:
+>
+> > **Dozen, conserven en bokalen** — 7 producten **— 16,13 €**
+
+---
+
+## 🌍 Tweetalig (FR / NL)
+
+De site bestaat in het Frans en het Nederlands; de extensie past zich
+automatisch aan, op basis van de URL (`/fr/chariot` vs `/nl/winkelwagen`) en
+daarna het attribuut `<html lang>`:
+
+| | 🇫🇷 Frans | 🇳🇱 Nederlands |
+|---|---|---|
+| Titel van het overzicht | Total par rayon | Totaal per afdeling |
+| Sortering | Montant décroissant / croissant / Ordre de la liste | Bedrag aflopend / oplopend / Volgorde van de lijst |
+
+---
+
+## 🚀 Installatie (ontwikkelaarsmodus)
+
+1. Download **[`dist/ext-colruyt.zip`](dist/ext-colruyt.zip)** (bij elke
+   codewijziging up-to-date gehouden) en **pak het uit**.
+   *(Alternatief: het repository klonen en de map rechtstreeks gebruiken.)*
+2. Open `chrome://extensions`.
+3. Activeer de **Ontwikkelaarsmodus** (rechtsboven).
+4. Klik op **"Uitgepakte extensie laden"** en selecteer de uitgepakte map
+   (die met `manifest.json`).
+5. Open de [Collect&Go-winkelwagen](https://www.collectandgo.be/nl/winkelwagen) — de totalen verschijnen. ✅
+
+> De zip wordt lokaal opnieuw gegenereerd (`npm run build`) bij elke
+> codewijziging. Een GitHub Actions-workflow **controleert** of die up-to-date
+> is bij elke push die een runtime-afhankelijkheid raakt (`manifest.json`,
+> `pure.js`, `content.js`, `icons/`) — anders faalt die, maar er wordt niets
+> gecommit.
+
+---
+
+## ⚙️ Hoe het werkt
+
+- **Doelpagina's**: `*://www.collectandgo.be/*/chariot` en
+  `*://www.collectandgo.be/*/winkelwagen`.
+- **Content script** geïnjecteerd bij `document_idle`.
+- **Prijzen lezen**: `.ds-product-total-price.is-p1__bold` — enkel de
+  desktopversie (de variant `--mobile` wordt genegeerd), in Europees formaat
+  (`5,98 €`, komma als decimaalteken).
+- **Merken**: afgeleid uit het productlabel (`.ds-product-tag`) — het **token
+  in hoofdletters vooraan** dient als merk (bv. "BONI ananas…" → `BONI`); bij
+  gebrek daaraan worden de producten gegroepeerd onder "Zonder merk". De
+  accordeon wordt voor **elke afdeling** aangeboden (voor de consistentie, ook
+  bij één enkel merk).
+- **Secties**: `.category` → kop `.header.background-blue` + productlijst; elk
+  product is een `.ds-product-list-item-container`.
+- **Link naar het assortiment**: de naam van de afdeling wordt gekoppeld (per
+  label, hoofdletter-/accentongevoelig) aan de assortimentspagina
+  (`rootCategoryId` stabiel), in **FR** zoals in **NL**. Als geen enkele
+  afdeling overeenkomt (tijdelijke afdeling, onbekend label…), wordt **geen
+  link geplaatst** — er gaat niets stuk.
+- **Herberekening**: een `MutationObserver` gericht op de Vue-wrapper
+  (`page-content`, met terugval op `.basket` en daarna `body`) start de
+  berekening opnieuw bij elke wijziging (hoeveelheid, verwijdering, promo…). De
+  temporisatie groepeert de dicht op elkaar volgende mutaties (**~250 ms**) en
+  garandeert tegelijk een uitvoering ten laatste na **~800 ms** — om niet te
+  worden "uitgehongerd" door de voortdurende mutaties van scripts van derden op
+  de pagina (chat, Tealium…). De observer **herverbindt** zich automatisch als
+  de SPA zijn root-node vervangt, en een **begrensd vangnet** (enkele seconden
+  bij het opstarten) start de berekening opnieuw — zodat de totalen betrouwbaar
+  verschijnen, ongeacht de browser (Chrome, Brave…) of de rendertiming van Vue.
+- **Idempotentie**: de verwerkte tellers `.count` worden gemarkeerd
+  (`data-cg-total-processed`); de waarde wordt ter plaatse bijgewerkt in plaats
+  van een node toe te voegen. De labels worden geschreven via `textContent`
+  (geen HTML-injectie).
+- **Zelftest van de structuur (heuristisch)**: bij het laden voert de extensie
+  enkele controles van de verwachte structuur uit (secties, teller, leesbare
+  prijs). Als de pagina lijkt te zijn veranderd, **schakelt ze zichzelf uit** en
+  toont een banner (zijbalk, of rood bovenaan als het ankerpunt verdwenen is)
+  om het risico op foute totalen te **beperken**. De detectie wacht enkele
+  cycli om valse positieven tijdens het renderen van de SPA te vermijden — het
+  is een heuristiek, zonder garantie op volledigheid.
+- **Niet-intrusief**: de extensie wijzigt geen enkele bestaande functie van de
+  pagina.
+
+---
+
+## 📁 Projectstructuur
+
+```
+ext-colruyt/
+├── manifest.json     # Manifest V3 (content scripts, doel-URL's)
+├── pure.js           # Pure, testbare functies (parsePrice, formatPrice, …)
+├── content.js        # DOM-logica: berekeningen, overzicht, sortering, scroll, accordeons, stijlen
+├── icons/            # Iconen 16 / 48 / 128 px
+├── dist/             # ext-colruyt.zip (gegenereerd, klaar om te installeren)
+├── scripts/          # build-zip.sh ("npm run build")
+├── test/             # Unit tests (node:test) van de pure functies
+├── .github/          # Workflow voor de controle van de zip
+├── package.json      # "npm test" · "npm run build"
+└── README.md
+```
+
+---
+
+## 🧪 Tests
+
+De pure functies (zonder DOM) — analyse/format van de prijzen, merkdetectie,
+**extractie van de hoeveelheden** (gewicht/volume uit het label) — zijn
+geïsoleerd in `pure.js` en gedekt door unit tests, **zonder enige
+afhankelijkheid** (`node:test`, ingebouwd in Node):
+
+```bash
+npm test
+```
+
+---
+
+## 👤 Credits
+
+Ontwikkeld door **InZeMobile SRL** — [www.inzemobile.com](https://www.inzemobile.com).
+
+Onafhankelijk project, niet geaffilieerd met Collect&Go of Colruyt Group.
+
+---
+
+## 🤝 Goede trouw & respect voor het merk
+
+Dit project is ontstaan uit een **oprechte waardering voor de
+Collect&Go-dienst** en heeft maar één doel: het comfort van de gebruiker van
+zijn winkelwagen verbeteren.
+
+- **Onafhankelijk en niet-officieel** — geen enkele band met Collect&Go of
+  Colruyt Group, geen enkel merklogo gebruikt.
+- **Respectvol tegenover de pagina** — leest de reeds weergegeven DOM, **geen
+  enkele serveraanroep**, **geen enkele gegevens** verzameld of verzonden; de
+  bestaande componenten worden niet gewijzigd.
+- **Trouw aan het design** — we hebben erop gelet de **_look & feel_** van de
+  Collect&Go-pagina **niet te verraden** (kleuren, typografie, eigen
+  componenten), uit respect voor het werk van hun teams; onze toevoegingen
+  integreren er discreet in.
+- **Licht** — we hebben erop gelet de **pagina niet te vertragen**: gegroepeerde
+  berekeningen (debounce), gerichte observatie van enkel de winkelwagen, en
+  heropbouw van de DOM enkel wanneer de gegevens werkelijk wijzigen.
+- **Controleerbaar** — open broncode, makkelijk te herlezen voor een
+  beveiligingsteam.
+
+> Dit respect voor de gebruiker en voor websites van derden — absolute
+> vertrouwelijkheid, niet-intrusie, transparantie — is de **ethische grondslag
+> van InZeMobile SRL**, toegepast op **al** haar producten, of ze nu vrij of
+> commercieel zijn.
+
+Wij dragen het grootste respect voor Collect&Go en Colruyt Group. **Op verzoek
+van de rechthebbenden passen we graag aan of verwijderen we** elk betrokken
+element — open gewoon een *issue* op dit repository of neem contact op met
+InZeMobile SRL.
+
+En uiteraard, **in overeenstemming met de MIT-licentie**, staat het Colruyt
+Group vrij om **deze code volledig of gedeeltelijk te hergebruiken**, zoals ze
+is of gewijzigd. We vragen enkel om **op de hoogte te worden gebracht**, zodat
+we kunnen aanpassen wat in het project verouderd zou raken — of het zelfs
+volledig verwijderen als het idee integraal wordt overgenomen (een samenwerking
+is trouwens altijd mogelijk 😉).
+
+---
+
+## ⚖️ Garantie & onderhoud
+
+Dit project wordt geleverd **"zoals het is" (_as-is_)**, zonder enige garantie
+van welke aard ook.
+InZeMobile SRL **kan op geen enkele manier aansprakelijk worden gesteld** voor
+de gevolgen van het gebruik ervan — met name, maar niet uitsluitend, voor
+eventuele storingen die verband houden met **toekomstige wijzigingen aan de
+Collect&Go-pagina**, die op elk moment kan evolueren.
+
+Wij **verbinden ons er niet toe** de extensie in de toekomst te onderhouden of
+bij te werken. Dat gezegd zijnde, aangezien we ze zelf dagelijks gebruiken, is
+dat een goede aanwijzing dat we niet zullen treuzelen om ze te herstellen 😉
+
+---
+
+## 📝 Licentie
+
+[MIT](LICENSE) — © InZeMobile SRL. Vrij te gebruiken, te wijzigen en te delen.
