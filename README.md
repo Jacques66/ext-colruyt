@@ -97,6 +97,8 @@ correspondent).
    dossier décompressé (celui qui contient `manifest.json`).
 5. Ouvrir le [chariot Collect&Go](https://www.collectandgo.be/fr/chariot) — les totaux apparaissent. ✅
 
+> 🧪 **Testé sous Windows 11**, sur **Google Chrome** et **Brave**.
+
 > Le zip est régénéré localement (`npm run build`) à chaque changement de code.
 > Un workflow GitHub Actions **vérifie** qu'il est bien à jour à chaque push
 > touchant une dépendance d'exécution (`manifest.json`, `pure.js`, `content.js`,
@@ -340,6 +342,8 @@ daarmee overeen):
 4. Klik op **"Uitgepakte extensie laden"** en selecteer de uitgepakte map
    (die met `manifest.json`).
 5. Open de [Collect&Go-winkelwagen](https://www.collectandgo.be/nl/winkelwagen) — de totalen verschijnen. ✅
+
+> 🧪 **Getest op Windows 11**, met **Google Chrome** en **Brave**.
 
 > De zip wordt lokaal opnieuw gegenereerd (`npm run build`) bij elke
 > codewijziging. Een GitHub Actions-workflow **controleert** of die up-to-date
