@@ -108,8 +108,10 @@ correspondent).
 
 ## ⚙️ Comment ça marche
 
-- **Pages ciblées** : `*://www.collectandgo.be/*/chariot` et
-  `*://www.collectandgo.be/*/winkelwagen`.
+- **Pages ciblées** : `*://www.collectandgo.be/*/chariot*` et
+  `*://www.collectandgo.be/*/winkelwagen*` (le `*` final est requis : le chariot
+  peut être ouvert avec un jeton en query, p. ex. `/fr/chariot?krypto=…`, et un
+  match pattern compare le chemin **query comprise**).
 - **Content script** injecté à `document_idle`.
 - **Lecture des prix** : `.ds-product-total-price.is-p1__bold` — version desktop
   uniquement (la variante `--mobile` est ignorée), au format européen
@@ -355,8 +357,10 @@ daarmee overeen):
 
 ## ⚙️ Hoe het werkt
 
-- **Doelpagina's**: `*://www.collectandgo.be/*/chariot` en
-  `*://www.collectandgo.be/*/winkelwagen`.
+- **Doelpagina's**: `*://www.collectandgo.be/*/chariot*` en
+  `*://www.collectandgo.be/*/winkelwagen*` (de afsluitende `*` is nodig: de mand
+  kan met een token in de query openen, bv. `/nl/winkelwagen?krypto=…`, en een
+  match pattern vergelijkt het pad **inclusief de query string**).
 - **Content script** geïnjecteerd bij `document_idle`.
 - **Prijzen lezen**: `.ds-product-total-price.is-p1__bold` — enkel de
   desktopversie (de variant `--mobile` wordt genegeerd), in Europees formaat

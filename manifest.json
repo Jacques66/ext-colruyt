@@ -21,8 +21,8 @@
   "content_scripts": [
     {
       "matches": [
-        "*://www.collectandgo.be/*/chariot",
-        "*://www.collectandgo.be/*/winkelwagen"
+        "*://www.collectandgo.be/*/chariot*",
+        "*://www.collectandgo.be/*/winkelwagen*"
       ],
       "js": ["pure.js", "content.js"],
       "run_at": "document_idle"
