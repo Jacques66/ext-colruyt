@@ -1580,9 +1580,40 @@
    * totaux finissent par s'afficher même si la mutation initiale de la SPA
    * n'a pas été captée. Passé ce délai, l'observateur suffit.
    */
+  /**
+   * Émet une ligne de diagnostic au démarrage : version, langue détectée et
+   * ce que l'auto-test de structure trouve tout de suite (panier, rayons, prix
+   * lisible). Volontairement discret et sans donnée personnelle.
+   */
+  function logStartup() {
+    try {
+      var version = '';
+      try {
+        if (typeof chrome !== 'undefined' && chrome.runtime &&
+            chrome.runtime.getManifest) {
+          version = ' v' + chrome.runtime.getManifest().version;
+        }
+      } catch (e) { /* hors contexte extension */ }
+      var basket = document.querySelector('.simple-basket');
+      var categories = document.querySelectorAll('.category').length;
+      var priceReadable = basket ? firstDesktopPriceReadable(basket) : false;
+      console.log(
+        '✅ Totaux par rayon — pour Collect&Go' + version +
+        ' — chargé (lang=' + detectSiteLang() +
+        ', panier=' + (basket ? 'oui' : 'non') +
+        ', rayons=' + categories +
+        ', prix lisible=' + (priceReadable ? 'oui' : 'non') + ')'
+      );
+    } catch (e) { /* le diagnostic ne doit jamais casser l'extension */ }
+  }
+
   function init() {
     injectStyles();
     bindSettingsChanges();
+    // Journal de démarrage (une ligne) : permet de vérifier, dans la console,
+    // que ce content script s'est bien injecté sur la page — utile pour
+    // diagnostiquer une non-injection selon le navigateur (Chrome, Brave…).
+    logStartup();
     // On lit d'abord les réglages, puis on démarre : on évite ainsi d'afficher
     // brièvement une fonction que l'utilisateur a désactivée. En l'absence
     // d'API de stockage (contexte hors extension), on démarre tout activé.
